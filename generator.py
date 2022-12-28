@@ -1,6 +1,7 @@
 from docxtpl import DocxTemplate
 import time
 import os
+import re
 
 ETACON_PATH = "/Volumes/Business/steven_20200721/1 備份 20200410/工作/A_ISO續評/2022複評/表單/P003生產流程/瑞肯COA/COA_Etacom_2536_2537" 
 DOCX_FILE_EXTENSION = ".docx"
@@ -22,8 +23,7 @@ def generate_coa_report(template_file: str, product_name: str, lot_no: str, visc
 
     # testing path
     filename = "output"
-    
-    filename += f"/COA_{product_name}_{time.strftime('%Y%m%d')}"
+    filename += "/COA_" + re.sub(r'[^a-zA-Z0-9]', '', product_name) + "_" + time.strftime('%Y%m%d')
     filename = sequence_filename(filename)
     template.save(filename=filename)
 

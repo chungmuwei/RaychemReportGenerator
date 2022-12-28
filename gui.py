@@ -1,19 +1,32 @@
 import dearpygui.dearpygui as dpg
 import generator
 
+ETACON_TEMPLATE_FILE = "templates/COA_Etacom_template.docx"
 ETACON_PRODUCT_NAME = ["樹脂CY2536", "硬化劑HY2536"]
 
 
-def export_etacon_coa():
+def export_coa_report(sender, app_data, user_data):
     """
-    Export Etacon COA word document
+    Export Certificate of Analysis report word document
     """
+
+    # print(f"sender is: {sender}")
+    # print(f"app_data is: {app_data}")
+    # print(f"user_data is: {user_data}")
+
+    # get value from user
     product_name = dpg.get_value("product_name")
     lot_no = dpg.get_value("lot_no")
     viscosity = dpg.get_value("viscosity")
     gel_time = dpg.get_value("gel_time")
-    generator.generate_etacom_coa(product_name, lot_no, viscosity, gel_time)
 
+    generator.generate_coa_report(
+        template_file=user_data, 
+        product_name=product_name, 
+        lot_no=lot_no, 
+        viscosity=viscosity, 
+        gel_time=gel_time
+    )
 
 
 def run():

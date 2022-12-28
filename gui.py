@@ -43,21 +43,25 @@ def run():
     #                          Handler                             #
     ################################################################
     with dpg.item_handler_registry(tag="etacon_export_button_handler") as handler:
-        dpg.add_item_clicked_handler(callback=export_etacon_coa)
+        dpg.add_item_clicked_handler(callback=export_coa_report, user_data=ETACON_TEMPLATE_FILE)
 
     with dpg.window(label="Example Window", tag="Primary Window"):
-        dpg.add_text("安達康")
-        dpg.add_listbox(label="品名", tag="product_name", default_value="樹脂CY2536", items=ETACON_PRODUCT_NAME, num_items=2)
-        dpg.add_input_text(label="批號", tag="lot_no", default_value="T")
-        dpg.add_input_int(label="黏度 cPs", tag="viscosity")
-        dpg.add_input_int(label="凝膠時間 sec", tag="gel_time")
-        dpg.add_button(label="Export", tag="etacon_export_button")
+        # 安達康
+        with dpg.collapsing_header(label="安達康"):
+            dpg.add_listbox(label="品名", tag="product_name", default_value="樹脂CY2536", items=ETACON_PRODUCT_NAME, num_items=2)
+            dpg.add_input_text(label="批號", tag="lot_no", default_value="T")
+            dpg.add_input_int(label="黏度 cPs", tag="viscosity")
+            dpg.add_input_int(label="凝膠時間 sec", tag="gel_time")
+            dpg.add_button(label="輸出報告", tag="etacon_export_button")
+        
+        # 巴斯威爾
+        # with dpg.collapsing_header(label="巴斯威爾"):
+            
 
         dpg.bind_font(zh_font)
-
         dpg.bind_item_handler_registry(item="etacon_export_button", handler_registry="etacon_export_button_handler")
 
-    dpg.create_viewport(title='COA Generator', width=900, height=600)
+    dpg.create_viewport(title='瑞肯材料品檢報告產生器', width=900, height=600)
     dpg.setup_dearpygui()
     dpg.show_viewport()
     dpg.set_primary_window("Primary Window", True)

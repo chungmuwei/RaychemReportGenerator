@@ -68,7 +68,25 @@ def run():
             dpg.add_input_int(label="黏度 cPs", tag="busway_viscosity")
             dpg.add_input_int(label="凝膠時間 sec", tag="busway_gel_time")
             dpg.add_button(label="輸出報告", tag="busway_export_button")
-            
+        
+        # 湯淺
+        with dpg.collapsing_header(label="湯淺"):
+            dpg.add_input_text(label="批號", tag="yuasa_lot_no", default_value="T")
+            with dpg.tree_node(label="AY8000R"):
+                dpg.add_input_int(label="AY8000R數量", tag="ay8000r_quantity")
+                dpg.add_input_int(label="黏度 cPs", tag="ay8000r_viscosity")
+                dpg.add_input_int(label="凝膠時間 sec", tag="ay8000r_gel_time")
+            with dpg.tree_node(label="AY8000B"):
+                dpg.add_input_int(label="AY8000B數量", tag="ay8000b_quantity")
+                dpg.add_input_int(label="黏度 cPs", tag="ay8000b_viscosity")
+                dpg.add_input_int(label="凝膠時間 sec", tag="ay8000b_gel_time")
+            with dpg.tree_node(label="HY8000"):        
+                dpg.add_input_int(label="HY8000數量", tag="hy8000_quantity")
+                dpg.add_input_float(label="黏度 cPs", tag="hy8000_viscosity")
+            dpg.add_input_float(label="浸酸前引張強度%", tag="before_tensile_strength")
+            dpg.add_input_float(label="浸酸後引張強度%", tag="after_tensile_strength")
+            dpg.add_input_fload(label="耐酸性%", tag="acid_resistance")
+            dpg.add_button(label="輸出報告", tag="yuasa_export_button")
 
         dpg.bind_font(zh_font)
         dpg.bind_item_handler_registry(item="etacon_export_button", handler_registry="etacon_export_button_handler")

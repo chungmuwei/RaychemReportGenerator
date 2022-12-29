@@ -6,18 +6,12 @@ import re
 ETACON_PATH = "/Volumes/Business/steven_20200721/1 備份 20200410/工作/A_ISO續評/2022複評/表單/P003生產流程/瑞肯COA/COA_Etacom_2536_2537" 
 DOCX_FILE_EXTENSION = ".docx"
 
-def generate_coa_report(template_file: str, product_name: str, lot_no: str, viscosity: int, gel_time: int):
+def generate_coa_report(template_file: str, context: dict[str, str]):
     template = DocxTemplate(template_file=template_file)
-    context = {
-        "product_name": product_name,
-        "date": time.strftime("%Y/%m/%d"),
-        "lot_no": lot_no,
-        "viscosity": viscosity,
-        "gel_time": gel_time
-    }
-
     template.render(context=context)
     
+    product_name = context["product_name"]
+
     # production path
     # filename = ETACON_PATH 
 

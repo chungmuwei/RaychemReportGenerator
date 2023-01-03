@@ -4,9 +4,11 @@ import time
 from datetime import date
 from dateutil.relativedelta import relativedelta    
 
-ETACON_TEMPLATE_FILE = "templates/COA_Etacom_template.docx"
-BUSWAY_TEMPLATE_FILE = "templates/COA_Busway_template.docx"
-YUASA_TEMPLATE_FILE = "templates/COA_Yuasa_template.docx"
+ETACON_TEMPLATE_FILE = generator.resource_path("templates/COA_Etacom_template.docx")
+BUSWAY_TEMPLATE_FILE = generator.resource_path("templates/COA_Busway_template.docx")
+YUASA_TEMPLATE_FILE = generator.resource_path("templates/COA_Yuasa_template.docx")
+
+EXPORT_PATH = "/Volumes/Business/steven_20200721/1 備份 20200410/工作/A_ISO續評/2022複評/表單/P003生產流程/瑞肯COA" 
 
 ETACON_PRODUCT_NAME = ["樹脂CY2536", "硬化劑HY2536"]
 BUSWAY_PRODUCT_NAME = ["CY2533L7"]
@@ -87,6 +89,9 @@ def export_yuasa_coa_report():
     print(context)
     generator.generate_coa_report(template_file=YUASA_TEMPLATE_FILE, context=context)
 
+def show_file_dialog():
+   dpg.show_item("etacon_file_dialog") 
+
 def run():
 
     dpg.create_context()
@@ -97,24 +102,12 @@ def run():
     
     # add chinese font
     with dpg.font_registry():
-        with dpg.font("fonts/Noto_Sans_TC/NotoSansTC-Regular.otf", 24) as zh_font:
+        with dpg.font(generator.resource_path("fonts/Noto_Sans_TC/NotoSansTC-Regular.otf"), 24) as zh_font:
             dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
             dpg.add_font_range_hint(dpg.mvFontRangeHint_Chinese_Full)
     # dpg.show_font_manager()
 
     # dpg.show_style_editor()
-
-    ################################################################
-    #                          Handlers                            #
-    ################################################################
-    with dpg.item_handler_registry(tag="etacon_export_button_handler") as handler:
-        dpg.add_item_clicked_handler(callback=export_type_1_coa_report, user_data={"company": "etacon_", "template": ETACON_TEMPLATE_FILE})
-
-    with dpg.item_handler_registry(tag="busway_export_button_handler") as handler:
-        dpg.add_item_clicked_handler(callback=export_type_1_coa_report, user_data={"company": "busway_", "template": BUSWAY_TEMPLATE_FILE})
-
-    with dpg.item_handler_registry(tag="yuasa_export_button_handler") as handler:
-        dpg.add_item_clicked_handler(callback=export_yuasa_coa_report)
 
     ################################################################
     #                          Windows                             #
@@ -126,7 +119,12 @@ def run():
             dpg.add_input_text(label="批號", tag="etacon_lot_no", default_value="T")
             dpg.add_input_int(label="黏度 cPs", tag="etacon_viscosity")
             dpg.add_input_int(label="凝膠時間 sec", tag="etacon_gel_time")
-            dpg.add_button(label="輸出報告", tag="etacon_export_button")
+            dpg.add_button(label="輸出報告", tag="etacon_export_button", callback=lambda: dpg.show_item("etacon_file_dialog")) 
+            
+            dpg.add_file_dialog(label="輸出安達康報告", tag="etacon_file_dialog", 
+                directory_selector=True, show=False, default_path=EXPORT_PATH, 
+                callback=export_type_1_coa_report, user_data={"company": "etacon_", 
+                "template": ETACON_TEMPLATE_FILE}, height=500)
         
         # 巴斯威爾
         with dpg.collapsing_header(label="巴斯威爾"):
@@ -134,7 +132,12 @@ def run():
             dpg.add_input_text(label="批號", tag="busway_lot_no", default_value="T")
             dpg.add_input_int(label="黏度 cPs", tag="busway_viscosity")
             dpg.add_input_int(label="凝膠時間 sec", tag="busway_gel_time")
-            dpg.add_button(label="輸出報告", tag="busway_export_button")
+            dpg.add_button(label="輸出報告", tag="busway_export_button", callback=lambda: dpg.show_item("busway_file_dialog"))
+
+            dpg.add_file_dialog(label="輸出巴斯威爾報告", tag="busway_file_dialog", 
+                directory_selector=True, show=False, default_path=EXPORT_PATH, 
+                callback=export_type_1_coa_report, user_data={"company": "busway_", 
+                "template": BUSWAY_TEMPLATE_FILE}, height=500)
         
         # 湯淺
         with dpg.collapsing_header(label="湯淺"):
@@ -153,12 +156,28 @@ def run():
             dpg.add_input_int(label="浸酸前引張強度 Kgf/cm2", tag="before_tensile_strength")
             dpg.add_input_int(label="浸酸後引張強度 Kgf/cm2", tag="after_tensile_strength")
             dpg.add_input_float(label="耐酸性 %", tag="acid_resistance")
-            dpg.add_button(label="輸出報告", tag="yuasa_export_button")
+            dpg.add_button(label="輸出報告", tag="yuasa_export_button", callback=lambda: dpg.show_item("yuasa_file_dialog"))
+
+            dpg.add_file_dialog(label="輸出湯淺報告", tag="yuasa_file_dialog", 
+                directory_selector=True, show=False, default_path=EXPORT_PATH, 
+                callback=export_yuasa_coa_report, height=500)
 
         dpg.bind_font(zh_font)
         dpg.bind_item_handler_registry(item="etacon_export_button", handler_registry="etacon_export_button_handler")
         dpg.bind_item_handler_registry(item="busway_export_button", handler_registry="busway_export_button_handler")
         dpg.bind_item_handler_registry(item="yuasa_export_button", handler_registry="yuasa_export_button_handler")
+
+    ################################################################
+    #                          Handlers                            #
+    ################################################################
+    # with dpg.item_handler_registry(tag="etacon_export_button_handler") as handler:
+    #     dpg.add_item_clicked_handler(callback=export_type_1_coa_report, user_data={"company": "etacon_", "template": ETACON_TEMPLATE_FILE})
+
+    # with dpg.item_handler_registry(tag="busway_export_button_handler") as handler:
+    #     dpg.add_item_clicked_handler(callback=export_type_1_coa_report, user_data={"company": "busway_", "template": BUSWAY_TEMPLATE_FILE})
+
+    # with dpg.item_handler_registry(tag="yuasa_export_button_handler") as handler:
+    #     dpg.add_item_clicked_handler(callback=export_yuasa_coa_report)
 
     dpg.create_viewport(title='瑞肯材料品檢報告產生器', width=900, height=600)
     dpg.setup_dearpygui()

@@ -9,3 +9,5 @@ build/
 *.spec
 
 icons/
+venv/
+.python-version

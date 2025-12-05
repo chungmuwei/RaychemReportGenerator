@@ -2,16 +2,50 @@ import dearpygui.dearpygui as dpg
 import generator
 import time
 from datetime import date
-from dateutil.relativedelta import relativedelta    
+from dateutil.relativedelta import relativedelta
+import os  
+import json
 
 ETACON_TEMPLATE_FILE = generator.resource_path("templates/COA_Etacom_template.docx")
 BUSWAY_TEMPLATE_FILE = generator.resource_path("templates/COA_Busway_template.docx")
 YUASA_TEMPLATE_FILE = generator.resource_path("templates/COA_Yuasa_template.docx")
-
-EXPORT_PATH = "/Volumes/Business/steven_20200721/1 備份 20200410/工作/A_ISO續評/2022複評/表單/P003生產流程/瑞肯COA" 
-
 ETACON_PRODUCT_NAME = ["樹脂CY2536", "硬化劑HY2536"]
 BUSWAY_PRODUCT_NAME = ["CY2533L7"]
+
+# Set config file path and default export path
+CONFIG_FILE = "config.json"
+DEFAULT_EXPORT_PATH = os.path.expanduser("~")
+EXPORT_PATH = "/Volumes/Business/steven_20200721/1 備份 20200410/工作/A_ISO續評/2022複評/表單/P003生產流程/瑞肯COA" 
+
+def load_last_path():
+    """Read last export path from config file"""
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, 'r') as f:
+                data = json.load(f)
+                return data.get("last_export_path", DEFAULT_EXPORT_PATH)
+        except:
+            return DEFAULT_EXPORT_PATH
+    return DEFAULT_EXPORT_PATH
+
+def save_last_path(path: str):
+    """Save last export path to config file"""
+    try:
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump({"last_export_path": path}, f)
+    except:
+        pass
+
+# 新增顯示訊息的函式
+def show_message(title, message):
+    # 建立一個唯一的 tag，避免重複開啟時衝突
+    window_tag = f"msg_win_{time.time()}"
+    
+    with dpg.window(label=title, modal=True, show=True, tag=window_tag, width=300, height=150):
+        dpg.add_text(message)
+        dpg.add_separator()
+        # 關閉視窗的按鈕
+        dpg.add_button(label="確定", width=75, callback=lambda: dpg.delete_item(window_tag))
 
 def export_type_1_coa_report(sender, app_data, user_data):
     """
@@ -21,6 +55,9 @@ def export_type_1_coa_report(sender, app_data, user_data):
     # print(f"sender is: {sender}")
     # print(f"app_data is: {app_data}")
     # print(f"user_data is: {user_data}")
+
+    output_dir = app_data["file_path_name"]
+    save_last_path(output_dir)
 
     # get value from user
     company = user_data["company"]
@@ -39,12 +76,20 @@ def export_type_1_coa_report(sender, app_data, user_data):
         "gel_time": gel_time
     }
 
-    generator.generate_coa_report(template_file=template, context=context)
+    try:
+        filename = generator.generate_coa_report(template_file=template, context=context, output_path=output_dir)
+        show_message("成功", f"報告 {filename} 已成功匯出至 {output_dir}！")
+    except Exception as e:
+        show_message("錯誤", f"匯出失敗：\n{str(e)}")
 
-def export_yuasa_coa_report():
+def export_yuasa_coa_report(sender, app_data, user_data):
     """
     Export Certificate of Analysis report word document for Yuasa
     """
+
+    # get output path
+    output_dir = app_data["file_path_name"]
+    save_last_path(output_dir)
 
     lot_no = dpg.get_value("yuasa_lot_no")
     year = 2000 + int(lot_no[1:3])
@@ -87,10 +132,32 @@ def export_yuasa_coa_report():
         "acid_resistance": "{:.2f}".format(acid_resistance)
     }
     print(context)
-    generator.generate_coa_report(template_file=YUASA_TEMPLATE_FILE, context=context)
+    
+    try:
+        filename = generator.generate_coa_report(template_file=template, context=context, output_path=output_dir)
+        show_message("成功", f"報告 {filename} 已成功匯出至 {output_dir}！")
+    except Exception as e:
+        show_message("錯誤", f"匯出失敗：\n{str(e)}")
 
-def show_file_dialog():
-   dpg.show_item("etacon_file_dialog") 
+def show_file_dialog(sender, app_data, user_data):
+    """
+    顯示檔案選擇對話框，並確保預設路徑是上次使用的路徑。
+    
+    Args:
+        sender: 觸發此 callback 的元件 (按鈕)
+        app_data: unused
+        user_data: 要顯示的檔案對話框 tag (str)
+    """
+    dialog_tag = user_data
+    
+    # 讀取最新的路徑 (從 config.json)
+    current_path = load_last_path()
+    
+    # 更新對話框的預設路徑
+    dpg.configure_item(dialog_tag, default_path=current_path)
+    
+    # 顯示對話框
+    dpg.show_item(dialog_tag) 
 
 def run():
 
@@ -108,7 +175,7 @@ def run():
     # dpg.show_font_manager()
 
     # dpg.show_style_editor()
-
+    current_export_path = load_last_path()
     ################################################################
     #                          Windows                             #
     ################################################################
@@ -119,10 +186,9 @@ def run():
             dpg.add_input_text(label="批號", tag="etacon_lot_no", default_value="T")
             dpg.add_input_int(label="黏度 cPs", tag="etacon_viscosity")
             dpg.add_input_int(label="凝膠時間 sec", tag="etacon_gel_time")
-            dpg.add_button(label="輸出報告", tag="etacon_export_button", callback=lambda: dpg.show_item("etacon_file_dialog")) 
-            
+            dpg.add_button(label="輸出報告", tag="etacon_export_button", callback=show_file_dialog, user_data="etacon_file_dialog") 
             dpg.add_file_dialog(label="輸出安達康報告", tag="etacon_file_dialog", 
-                directory_selector=True, show=False, default_path=EXPORT_PATH, 
+                directory_selector=True, show=False, default_path=current_export_path, 
                 callback=export_type_1_coa_report, user_data={"company": "etacon_", 
                 "template": ETACON_TEMPLATE_FILE}, height=500)
         
@@ -132,10 +198,10 @@ def run():
             dpg.add_input_text(label="批號", tag="busway_lot_no", default_value="T")
             dpg.add_input_int(label="黏度 cPs", tag="busway_viscosity")
             dpg.add_input_int(label="凝膠時間 sec", tag="busway_gel_time")
-            dpg.add_button(label="輸出報告", tag="busway_export_button", callback=lambda: dpg.show_item("busway_file_dialog"))
+            dpg.add_button(label="輸出報告", tag="busway_export_button", callback=show_file_dialog, user_data="busway_file_dialog")
 
             dpg.add_file_dialog(label="輸出巴斯威爾報告", tag="busway_file_dialog", 
-                directory_selector=True, show=False, default_path=EXPORT_PATH, 
+                directory_selector=True, show=False, default_path=current_export_path, 
                 callback=export_type_1_coa_report, user_data={"company": "busway_", 
                 "template": BUSWAY_TEMPLATE_FILE}, height=500)
         
@@ -156,10 +222,10 @@ def run():
             dpg.add_input_int(label="浸酸前引張強度 Kgf/cm2", tag="before_tensile_strength")
             dpg.add_input_int(label="浸酸後引張強度 Kgf/cm2", tag="after_tensile_strength")
             dpg.add_input_float(label="耐酸性 %", tag="acid_resistance")
-            dpg.add_button(label="輸出報告", tag="yuasa_export_button", callback=lambda: dpg.show_item("yuasa_file_dialog"))
+            dpg.add_button(label="輸出報告", tag="yuasa_export_button", callback=show_file_dialog, user_data="yuasa_file_dialog")
 
             dpg.add_file_dialog(label="輸出湯淺報告", tag="yuasa_file_dialog", 
-                directory_selector=True, show=False, default_path=EXPORT_PATH, 
+                directory_selector=True, show=False, default_path=current_export_path, 
                 callback=export_yuasa_coa_report, height=500)
 
         dpg.bind_font(zh_font)

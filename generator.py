@@ -12,7 +12,7 @@ def resource_path(relative_path):
     base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
 
-def generate_coa_report(template_file: str, context: dict[str, str]):
+def generate_coa_report(template_file: str, context: dict[str, str], output_path: str | None = None):
     template = DocxTemplate(template_file=resource_path(template_file))
     template.render(context=context)
     
@@ -22,12 +22,13 @@ def generate_coa_report(template_file: str, context: dict[str, str]):
     # filename = ETACON_PATH 
 
     # testing path
-    filename = TEST_EXPORT_PATH
-    filename += "/COA_" + re.sub(r'[^a-zA-Z0-9]', '', product_name) + "_" + time.strftime('%Y%m%d')
+    # Use provided output path or fallback to TEST_EXPORT_PATH
+    target_directory = output_path if output_path else TEST_EXPORT_PATH
+    filename = os.path.join(target_directory, "COA_" + re.sub(r'[^a-zA-Z0-9]', '', product_name) + "_" + time.strftime('%Y%m%d'))
     filename = sequence_filename(filename)
     print(f"Export docx at {resource_path(filename)}")
     template.save(filename=resource_path(filename))
-
+    return filename
 def sequence_filename(path: str) -> str:
     
     order = 2

@@ -26,5 +26,5 @@ to install all requirements.
 ## Run
 
 ```bash
-python gui.py
+python "Raychem Report.py"
 ```

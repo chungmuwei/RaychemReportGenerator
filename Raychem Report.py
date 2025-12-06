@@ -37,12 +37,22 @@ def save_last_path(path: str):
         pass
 
 # 新增顯示訊息的函式
-def show_message(title, message):
+def show_message(title, message, window_width=450, window_height=150, centred=True):
+    
+    # 計算置中位置 (Viewport 寬高 / 2 - 視窗寬高 / 2)
+    if centred:
+        vp_width = dpg.get_viewport_width()
+        vp_height = dpg.get_viewport_height()
+        pos_x = (vp_width // 2) - (window_width // 2)
+        pos_y = (vp_height // 2) - (window_height // 2)
+
     # 建立一個唯一的 tag，避免重複開啟時衝突
     window_tag = f"msg_win_{time.time()}"
     
-    with dpg.window(label=title, modal=True, show=True, tag=window_tag, width=300, height=150):
-        dpg.add_text(message)
+    with dpg.window(label=title, modal=True, show=True, tag=window_tag, 
+                    width=window_width, height=window_height,
+                    pos=[pos_x, pos_y] if centred else [100, 100], popup=True):
+        dpg.add_text(message, wrap=window_width - 20)
         dpg.add_separator()
         # 關閉視窗的按鈕
         dpg.add_button(label="確定", width=75, callback=lambda: dpg.delete_item(window_tag))
@@ -78,7 +88,7 @@ def export_type_1_coa_report(sender, app_data, user_data):
 
     try:
         filename = generator.generate_coa_report(template_file=template, context=context, output_path=output_dir)
-        show_message("成功", f"報告 {filename} 已成功匯出至 {output_dir}！")
+        show_message("成功", f"報告 {os.path.basename(filename)} 已成功匯出至 {output_dir}！")
     except Exception as e:
         show_message("錯誤", f"匯出失敗：\n{str(e)}")
 
@@ -90,6 +100,10 @@ def export_yuasa_coa_report(sender, app_data, user_data):
     # get output path
     output_dir = app_data["file_path_name"]
     save_last_path(output_dir)
+
+    # get value from user
+    company = user_data["company"]
+    template = user_data["template"]
 
     lot_no = dpg.get_value("yuasa_lot_no")
     year = 2000 + int(lot_no[1:3])
@@ -135,7 +149,8 @@ def export_yuasa_coa_report(sender, app_data, user_data):
     
     try:
         filename = generator.generate_coa_report(template_file=template, context=context, output_path=output_dir)
-        show_message("成功", f"報告 {filename} 已成功匯出至 {output_dir}！")
+        # get the file name from the full path
+        show_message("成功", f"報告 {os.path.basename(filename)} 已成功匯出至 {output_dir}！")
     except Exception as e:
         show_message("錯誤", f"匯出失敗：\n{str(e)}")
 

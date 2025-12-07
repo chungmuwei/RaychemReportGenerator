@@ -1,0 +1,42 @@
+{
+    "etacom": {
+            "樹脂CY2536L": {
+                "weight": "1300KG", 
+                "viscosity_range": "900~1500", 
+                "appearance": "淡黃色透明液體", 
+                "hardness": ">70", 
+                "gel_time_range": "40~80" 
+            },
+            "硬化劑HY2536": {
+                "weight": "1180KG", 
+                "viscosity_range": "400~900", 
+                "appearance": "棕色無雜質液體", 
+                "hardness": ">70", 
+                "gel_time_range": "40~80" 
+            },
+            "硬化劑HY2537": {
+                "weight": "180KG*1桶", 
+                "viscosity_range": "20~50", 
+                "appearance": "透明無雜質液體", 
+                "hardness": ">70", 
+                "gel_time_range": "40~80" 
+            }
+    },
+    "busway": {
+        "CY2533L7": {
+                "weight": "1100KG", 
+                "viscosity_range": "1000~1500", 
+                "appearance": "Light yellow transparent liquid", 
+                "hardness": ">70", 
+                "gel_time_range": "60~100" 
+        },
+        "HY2533": {
+                "weight": "950KG", 
+                "viscosity_range": "500~1300", 
+                "appearance": "Brown transparent liquid", 
+                "hardness": ">70", 
+                "gel_time_range": "60~100"
+
+        }
+    }
+}

@@ -6,14 +6,15 @@ from dateutil.relativedelta import relativedelta
 import os  
 import json
 
-ETACON_TEMPLATE_FILE = generator.resource_path("templates/COA_Etacom_template.docx")
+ETACOM_TEMPLATE_FILE = generator.resource_path("templates/COA_Etacom_template.docx")
 BUSWAY_TEMPLATE_FILE = generator.resource_path("templates/COA_Busway_template.docx")
 YUASA_TEMPLATE_FILE = generator.resource_path("templates/COA_Yuasa_template.docx")
-ETACON_PRODUCT_NAME = ["樹脂CY2536L", "硬化劑HY2536", "硬化劑HY2537"]
-BUSWAY_PRODUCT_NAME = ["樹脂CY2533L7", "硬化劑HY2533"]
+ETACOM_PRODUCT_NAME = ["樹脂CY2536L", "硬化劑HY2536", "硬化劑HY2537"]
+BUSWAY_PRODUCT_NAME = ["CY2533L7", "HY2533"]
 
-# Set config file path and default export path
+# PATHS
 CONFIG_FILE = "config.json"
+PRODUCT_SPECS_FILE = "product_specs.json"
 DEFAULT_EXPORT_PATH = os.path.expanduser("~")
 EXPORT_PATH = "/Volumes/Business/steven_20200721/1 備份 20200410/工作/A_ISO續評/2022複評/表單/P003生產流程/瑞肯COA" 
 
@@ -68,20 +69,29 @@ def export_type_1_coa_report(sender, app_data, user_data):
 
     output_dir = app_data["file_path_name"]
     save_last_path(output_dir)
+    
+    with open(PRODUCT_SPECS_FILE, 'r') as f:
+        product_specs = json.load(f)
 
     # get value from user
     company = user_data["company"]
     template = user_data["template"]
 
-    product_name = dpg.get_value(company+"product_name")
-    lot_no = dpg.get_value(company+"lot_no")
-    viscosity = dpg.get_value(company+"viscosity")
-    gel_time = dpg.get_value(company+"gel_time")
+    product_name = dpg.get_value(company+"_product_name")
+    lot_no = dpg.get_value(company+"_lot_no")
+    viscosity = dpg.get_value(company+"_viscosity")
+    gel_time = dpg.get_value(company+"_gel_time")
 
     context = {
         "product_name": product_name,
         "date": time.strftime("%Y/%m/%d"),
         "lot_no": lot_no,
+        "weight": product_specs[company][product_name]["weight"],
+        "viscosity_range": product_specs[company][product_name]["viscosity_range"],
+        "appearance": product_specs[company][product_name]["appearance"],
+        "obs_appearance": product_specs[company][product_name]["appearance"],
+        "hardness": product_specs[company][product_name]["hardness"],
+        "gel_time_range": product_specs[company][product_name]["gel_time_range"],
         "viscosity": viscosity,
         "gel_time": gel_time
     }
@@ -152,6 +162,7 @@ def export_yuasa_coa_report(sender, app_data, user_data):
         # get the file name from the full path
         show_message("成功", f"報告 {os.path.basename(filename)} 已成功匯出至 {output_dir}！")
     except Exception as e:
+        print(str(e))
         show_message("錯誤", f"匯出失敗：\n{str(e)}")
 
 def show_file_dialog(sender, app_data, user_data):
@@ -197,16 +208,16 @@ def run():
     with dpg.window(label="Example Window", tag="Primary Window"):
         # 安達康
         with dpg.collapsing_header(label="安達康"):
-            dpg.add_listbox(label="品名", tag="etacon_product_name", default_value="樹脂CY2536", items=ETACON_PRODUCT_NAME, num_items=2)
-            dpg.add_input_text(label="批號", tag="etacon_lot_no", default_value="T")
-            dpg.add_input_int(label="黏度 cPs", tag="etacon_viscosity")
-            dpg.add_input_int(label="凝膠時間 sec", tag="etacon_gel_time")
+            dpg.add_listbox(label="品名", tag="etacom_product_name", default_value="樹脂CY2536L", items=ETACOM_PRODUCT_NAME, num_items=2)
+            dpg.add_input_text(label="批號", tag="etacom_lot_no", default_value="T")
+            dpg.add_input_int(label="黏度 cPs", tag="etacom_viscosity")
+            dpg.add_input_int(label="凝膠時間 sec", tag="etacom_gel_time")
             
-            dpg.add_file_dialog(label="輸出安達康報告", tag="etacon_file_dialog", 
+            dpg.add_file_dialog(label="輸出安達康報告", tag="etacom_file_dialog", 
                 directory_selector=True, show=False, default_path=current_export_path, 
-                callback=export_type_1_coa_report, user_data={"company": "etacon_", 
-                "template": ETACON_TEMPLATE_FILE}, height=500)
-            dpg.add_button(label="輸出報告", tag="etacon_export_button", callback=lambda: dpg.show_item("etacon_file_dialog"), user_data="etacon_file_dialog") 
+                callback=export_type_1_coa_report, user_data={"company": "etacom", 
+                "template": ETACOM_TEMPLATE_FILE}, height=500)
+            dpg.add_button(label="輸出報告", tag="etacom_export_button", callback=lambda: dpg.show_item("etacom_file_dialog"), user_data="etacom_file_dialog") 
         
         # 巴斯威爾
         with dpg.collapsing_header(label="巴斯威爾"):
@@ -217,7 +228,7 @@ def run():
 
             dpg.add_file_dialog(label="輸出巴斯威爾報告", tag="busway_file_dialog", 
                 directory_selector=True, show=False, default_path=current_export_path, 
-                callback=export_type_1_coa_report, user_data={"company": "busway_", 
+                callback=export_type_1_coa_report, user_data={"company": "busway", 
                 "template": BUSWAY_TEMPLATE_FILE}, height=500)
             dpg.add_button(label="輸出報告", tag="busway_export_button", callback=lambda: dpg.show_item("busway_file_dialog"), user_data="busway_file_dialog")
         
@@ -245,15 +256,15 @@ def run():
             dpg.add_button(label="輸出報告", tag="yuasa_export_button", callback=lambda: dpg.show_item("yuasa_file_dialog"), user_data="yuasa_file_dialog")
 
         dpg.bind_font(zh_font)
-        dpg.bind_item_handler_registry(item="etacon_export_button", handler_registry="etacon_export_button_handler")
+        dpg.bind_item_handler_registry(item="etacom_export_button", handler_registry="etacom_export_button_handler")
         dpg.bind_item_handler_registry(item="busway_export_button", handler_registry="busway_export_button_handler")
         dpg.bind_item_handler_registry(item="yuasa_export_button", handler_registry="yuasa_export_button_handler")
 
     ################################################################
     #                          Handlers                            #
     ################################################################
-    # with dpg.item_handler_registry(tag="etacon_export_button_handler") as handler:
-    #     dpg.add_item_clicked_handler(callback=export_type_1_coa_report, user_data={"company": "etacon_", "template": ETACON_TEMPLATE_FILE})
+    # with dpg.item_handler_registry(tag="etacom_export_button_handler") as handler:
+    #     dpg.add_item_clicked_handler(callback=export_type_1_coa_report, user_data={"company": "etacom_", "template": ETACOM_TEMPLATE_FILE})
 
     # with dpg.item_handler_registry(tag="busway_export_button_handler") as handler:
     #     dpg.add_item_clicked_handler(callback=export_type_1_coa_report, user_data={"company": "busway_", "template": BUSWAY_TEMPLATE_FILE})

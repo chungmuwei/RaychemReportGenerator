@@ -9,8 +9,8 @@ import json
 ETACON_TEMPLATE_FILE = generator.resource_path("templates/COA_Etacom_template.docx")
 BUSWAY_TEMPLATE_FILE = generator.resource_path("templates/COA_Busway_template.docx")
 YUASA_TEMPLATE_FILE = generator.resource_path("templates/COA_Yuasa_template.docx")
-ETACON_PRODUCT_NAME = ["樹脂CY2536", "硬化劑HY2536"]
-BUSWAY_PRODUCT_NAME = ["CY2533L7"]
+ETACON_PRODUCT_NAME = ["樹脂CY2536L", "硬化劑HY2536", "硬化劑HY2537"]
+BUSWAY_PRODUCT_NAME = ["樹脂CY2533L7", "硬化劑HY2533"]
 
 # Set config file path and default export path
 CONFIG_FILE = "config.json"

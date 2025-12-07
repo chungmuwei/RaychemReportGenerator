@@ -201,11 +201,12 @@ def run():
             dpg.add_input_text(label="批號", tag="etacon_lot_no", default_value="T")
             dpg.add_input_int(label="黏度 cPs", tag="etacon_viscosity")
             dpg.add_input_int(label="凝膠時間 sec", tag="etacon_gel_time")
-            dpg.add_button(label="輸出報告", tag="etacon_export_button", callback=show_file_dialog, user_data="etacon_file_dialog") 
+            
             dpg.add_file_dialog(label="輸出安達康報告", tag="etacon_file_dialog", 
                 directory_selector=True, show=False, default_path=current_export_path, 
                 callback=export_type_1_coa_report, user_data={"company": "etacon_", 
                 "template": ETACON_TEMPLATE_FILE}, height=500)
+            dpg.add_button(label="輸出報告", tag="etacon_export_button", callback=lambda: dpg.show_item("etacon_file_dialog"), user_data="etacon_file_dialog") 
         
         # 巴斯威爾
         with dpg.collapsing_header(label="巴斯威爾"):
@@ -213,12 +214,12 @@ def run():
             dpg.add_input_text(label="批號", tag="busway_lot_no", default_value="T")
             dpg.add_input_int(label="黏度 cPs", tag="busway_viscosity")
             dpg.add_input_int(label="凝膠時間 sec", tag="busway_gel_time")
-            dpg.add_button(label="輸出報告", tag="busway_export_button", callback=show_file_dialog, user_data="busway_file_dialog")
 
             dpg.add_file_dialog(label="輸出巴斯威爾報告", tag="busway_file_dialog", 
                 directory_selector=True, show=False, default_path=current_export_path, 
                 callback=export_type_1_coa_report, user_data={"company": "busway_", 
                 "template": BUSWAY_TEMPLATE_FILE}, height=500)
+            dpg.add_button(label="輸出報告", tag="busway_export_button", callback=lambda: dpg.show_item("busway_file_dialog"), user_data="busway_file_dialog")
         
         # 湯淺
         with dpg.collapsing_header(label="湯淺"):
@@ -237,11 +238,11 @@ def run():
             dpg.add_input_int(label="浸酸前引張強度 Kgf/cm2", tag="before_tensile_strength")
             dpg.add_input_int(label="浸酸後引張強度 Kgf/cm2", tag="after_tensile_strength")
             dpg.add_input_float(label="耐酸性 %", tag="acid_resistance")
-            dpg.add_button(label="輸出報告", tag="yuasa_export_button", callback=show_file_dialog, user_data="yuasa_file_dialog")
 
             dpg.add_file_dialog(label="輸出湯淺報告", tag="yuasa_file_dialog", 
                 directory_selector=True, show=False, default_path=current_export_path, 
                 callback=export_yuasa_coa_report, height=500)
+            dpg.add_button(label="輸出報告", tag="yuasa_export_button", callback=lambda: dpg.show_item("yuasa_file_dialog"), user_data="yuasa_file_dialog")
 
         dpg.bind_font(zh_font)
         dpg.bind_item_handler_registry(item="etacon_export_button", handler_registry="etacon_export_button_handler")

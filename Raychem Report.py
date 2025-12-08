@@ -195,9 +195,19 @@ def run():
     
     # add chinese font
     with dpg.font_registry():
+        # normal size font
         with dpg.font(generator.resource_path("fonts/Noto_Sans_TC/NotoSansTC-Regular.otf"), 24) as zh_font:
             dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
             dpg.add_font_range_hint(dpg.mvFontRangeHint_Chinese_Full)
+        # normal size bold font 
+        with dpg.font(generator.resource_path("fonts/Noto_Sans_TC/NotoSansTC-Bold.otf"), 24) as zh_bold_font:
+            dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
+            dpg.add_font_range_hint(dpg.mvFontRangeHint_Chinese_Full)
+        # header size font
+        with dpg.font(generator.resource_path("fonts/Noto_Sans_TC/NotoSansTC-Regular.otf"), 32) as zh_header_font:
+            dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
+            dpg.add_font_range_hint(dpg.mvFontRangeHint_Chinese_Full)
+
     # dpg.show_font_manager()
 
     # dpg.show_style_editor()
@@ -208,7 +218,7 @@ def run():
     with dpg.window(label="Example Window", tag="Primary Window"):
         # 安達康
         with dpg.collapsing_header(label="安達康"):
-            dpg.add_listbox(label="品名", tag="etacom_product_name", default_value="樹脂CY2536L", items=ETACOM_PRODUCT_NAME, num_items=2)
+            dpg.add_listbox(label="品名", tag="etacom_product_name", default_value="樹脂CY2536L", items=ETACOM_PRODUCT_NAME, num_items=3)
             dpg.add_input_text(label="批號", tag="etacom_lot_no", default_value="T")
             dpg.add_input_int(label="黏度 cPs", tag="etacom_viscosity")
             dpg.add_input_int(label="凝膠時間 sec", tag="etacom_gel_time")
@@ -255,7 +265,7 @@ def run():
                 callback=export_yuasa_coa_report, height=500)
             dpg.add_button(label="輸出報告", tag="yuasa_export_button", callback=lambda: dpg.show_item("yuasa_file_dialog"), user_data="yuasa_file_dialog")
 
-        dpg.bind_font(zh_font)
+        dpg.bind_font(zh_header_font)
         dpg.bind_item_handler_registry(item="etacom_export_button", handler_registry="etacom_export_button_handler")
         dpg.bind_item_handler_registry(item="busway_export_button", handler_registry="busway_export_button_handler")
         dpg.bind_item_handler_registry(item="yuasa_export_button", handler_registry="yuasa_export_button_handler")

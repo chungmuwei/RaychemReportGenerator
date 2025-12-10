@@ -26,8 +26,8 @@ def generate_coa_report(template_file: str, context: dict[str, str], output_path
     target_directory = output_path if output_path else TEST_EXPORT_PATH
     filepath = os.path.join(target_directory, "COA_" + re.sub(r'[^a-zA-Z0-9]', '', product_name) + "_" + time.strftime('%Y%m%d'))
     filepath = sequence_filename(filepath)
-    print(f"Export docx at {resource_path(filepath)}")
-    template.save(filename=resource_path(filepath))
+    print(f"Export docx at {filepath}")
+    template.save(filename=filepath)
     return filepath
 def sequence_filename(path: str) -> str:
     

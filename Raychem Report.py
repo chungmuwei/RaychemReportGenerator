@@ -13,8 +13,8 @@ ETACOM_PRODUCT_NAME = ["樹脂CY2536L", "硬化劑HY2536", "硬化劑HY2537"]
 BUSWAY_PRODUCT_NAME = ["CY2533L7", "HY2533"]
 
 # PATHS
-CONFIG_FILE = "config.json"
-PRODUCT_SPECS_FILE = "product_specs.json"
+CONFIG_FILE = os.path.join(os.path.expanduser("~"), ".raychem_report_config.json")
+PRODUCT_SPECS_FILE = generator.resource_path("product_specs.json")
 DEFAULT_EXPORT_PATH = os.path.expanduser("~")
 EXPORT_PATH = "/Volumes/Business/steven_20200721/1 備份 20200410/工作/A_ISO續評/2022複評/表單/P003生產流程/瑞肯COA" 
 

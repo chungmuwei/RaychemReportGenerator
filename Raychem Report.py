@@ -6,7 +6,8 @@ from dateutil.relativedelta import relativedelta
 import os  
 import json
 
-ETACOM_TEMPLATE_FILE = generator.resource_path("templates/COA_Etacom_template.docx")
+# ETACOM_TEMPLATE_FILE = generator.resource_path("templates/COA_Etacom_template.docx")
+ETACOM_TEMPLATE_FILE = generator.resource_path("templates/COA_Etacom_template_font_revision.docx") # 標楷體
 BUSWAY_TEMPLATE_FILE = generator.resource_path("templates/COA_Busway_template.docx")
 YUASA_TEMPLATE_FILE = generator.resource_path("templates/COA_Yuasa_template.docx")
 ETACOM_PRODUCT_NAME = ["樹脂CY2536L", "硬化劑HY2536", "硬化劑HY2537"]

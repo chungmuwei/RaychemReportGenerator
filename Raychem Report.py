@@ -67,7 +67,7 @@ def export_type_1_coa_report(sender, app_data, user_data):
     # print(f"app_data is: {app_data}")
     # print(f"user_data is: {user_data}")
 
-    output_dir = app_data["file_path_name"]
+    output_dir = app_data["file_path_name"] # get output path from file dialog
     save_last_path(output_dir)
     
     with open(PRODUCT_SPECS_FILE, 'r') as f:
@@ -76,7 +76,8 @@ def export_type_1_coa_report(sender, app_data, user_data):
     # get value from user
     company = user_data["company"]
     template = user_data["template"]
-
+    # get value from app data
+    test_date = dpg.get_value(company+"_date")
     product_name = dpg.get_value(company+"_product_name")
     lot_no = dpg.get_value(company+"_lot_no")
     viscosity = dpg.get_value(company+"_viscosity")
@@ -84,7 +85,7 @@ def export_type_1_coa_report(sender, app_data, user_data):
 
     context = {
         "product_name": product_name,
-        "date": time.strftime("%Y/%m/%d"),
+        "date": test_date,
         "lot_no": lot_no,
         "weight": product_specs[company][product_name]["weight"],
         "viscosity_range": product_specs[company][product_name]["viscosity_range"],
@@ -114,7 +115,8 @@ def export_yuasa_coa_report(sender, app_data, user_data):
     # get value from user
     company = user_data["company"]
     template = user_data["template"]
-
+    test_date = dpg.get_value(company+"_date")
+    
     lot_no = dpg.get_value("yuasa_lot_no")
     year = 2000 + int(lot_no[1:3])
     month = int(lot_no[3:5])
@@ -139,7 +141,7 @@ def export_yuasa_coa_report(sender, app_data, user_data):
 
     context = {
         "product_name": "AY8000RB",
-        "date": time.strftime("%Y-%m-%d"),
+        "date": test_date,
         "lot_no": lot_no,
         "ay8000r_quant": ay8000r_quantity,
         "ay8000b_quant": ay8000b_quantity,
@@ -222,6 +224,7 @@ def run():
             dpg.add_input_text(label="批號", tag="etacom_lot_no", default_value="T")
             dpg.add_input_int(label="黏度 cPs", tag="etacom_viscosity")
             dpg.add_input_int(label="凝膠時間 sec", tag="etacom_gel_time")
+            dpg.add_input_text(label="檢測日期(YYYYMMDD)", tag="etacom_date", default_value=time.strftime("%Y%m%d"))
             
             dpg.add_file_dialog(label="輸出安達康報告", tag="etacom_file_dialog", 
                 directory_selector=True, show=False, default_path=current_export_path, 
@@ -235,7 +238,7 @@ def run():
             dpg.add_input_text(label="批號", tag="busway_lot_no", default_value="T")
             dpg.add_input_int(label="黏度 cPs", tag="busway_viscosity")
             dpg.add_input_int(label="凝膠時間 sec", tag="busway_gel_time")
-
+            dpg.add_input_text(label="檢測日期(YYYYMMDD)", tag="busway_date", default_value=time.strftime("%Y%m%d"))
             dpg.add_file_dialog(label="輸出巴斯威爾報告", tag="busway_file_dialog", 
                 directory_selector=True, show=False, default_path=current_export_path, 
                 callback=export_type_1_coa_report, user_data={"company": "busway", 
@@ -259,10 +262,12 @@ def run():
             dpg.add_input_int(label="浸酸前引張強度 Kgf/cm2", tag="before_tensile_strength")
             dpg.add_input_int(label="浸酸後引張強度 Kgf/cm2", tag="after_tensile_strength")
             dpg.add_input_float(label="耐酸性 %", tag="acid_resistance")
+            dpg.add_input_text(label="檢測日期(YYYYMMDD)", tag="yuasa_date", default_value=time.strftime("%Y%m%d"))
 
             dpg.add_file_dialog(label="輸出湯淺報告", tag="yuasa_file_dialog", 
                 directory_selector=True, show=False, default_path=current_export_path, 
-                callback=export_yuasa_coa_report, height=500)
+                callback=export_yuasa_coa_report, user_data={"company": "yuasa", 
+                "template": YUASA_TEMPLATE_FILE}, height=500)
             dpg.add_button(label="輸出報告", tag="yuasa_export_button", callback=lambda: dpg.show_item("yuasa_file_dialog"), user_data="yuasa_file_dialog")
 
         dpg.bind_font(zh_header_font)

@@ -122,7 +122,9 @@ def export_yuasa_coa_report(sender, app_data, user_data):
     year = 2000 + int(lot_no[1:3])
     month = int(lot_no[3:5])
     day = int(lot_no[5:7])
-    due_date = date(year, month, day) + relativedelta(month=6)
+    due_date = date(year, month, day) + relativedelta(months=+6)
+    print(f"month is: {month}, day is: {day}")
+    print(f"due date is: {due_date}")
 
     ay8000r_quantity = dpg.get_value("ay8000r_quantity")
     ay8000r_viscosity = dpg.get_value("ay8000r_viscosity")

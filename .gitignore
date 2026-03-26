@@ -11,3 +11,8 @@ build/
 icons/
 venv/
 .python-version
+
+*.icns
+*.svg
+*.dmg
+*.docx

@@ -17,12 +17,13 @@ def generate_coa_report(template_file: str, context: dict[str, str], output_path
     Generate COA report based on corresponding template docx file and context (test results), 
     then save the report to provided output path or TEST_EXPORT_PATH if output path is not provided.
     """
+    print(f"""Generate COA report with template file: {template_file} and context: {context}""")
     
     template = DocxTemplate(template_file=resource_path(template_file))
     template.render(context=context)
     
     product_name = context["product_name"]
-    date = context["date"]
+    lot_no = context["lot_no"]
 
     # production path
     # filename = ETACON_PATH 
@@ -30,8 +31,7 @@ def generate_coa_report(template_file: str, context: dict[str, str], output_path
     # testing path
     # Use provided output path or fallback to TEST_EXPORT_PATH
     target_directory = output_path if output_path else TEST_EXPORT_PATH
-    # filepath = os.path.join(target_directory, "COA_" + re.sub(r'[^a-zA-Z0-9]', '', product_name) + "_" + time.strftime('%Y%m%d'))
-    filepath = os.path.join(target_directory, "COA_" + re.sub(r'[^a-zA-Z0-9]', '', product_name) + "_" + date)
+    filepath = os.path.join(target_directory, "COA_" + re.sub(r'[^a-zA-Z0-9]', '', product_name) + "_" + lot_no)
     filepath = sequence_filename(filepath)
     print(f"Export docx at {filepath}")
     template.save(filename=filepath)

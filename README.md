@@ -9,7 +9,7 @@ Create a python3.10 virtual environment,
 virtualenv venv -p python310
 ```
 
-activate it
+Activate it
 
 ```bash
 source venv/bin/activate

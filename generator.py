@@ -1,8 +1,12 @@
+"""
+This file includes functions to generate COA report docx file
+"""
+
 from docxtpl import DocxTemplate
-import time
 import os
 import re
 import sys
+
 TEST_EXPORT_PATH = "/Users/raymond/Desktop/code/python/RaychemReportGenerator/output"
 ETACON_PATH = "/Volumes/Business/steven_20200721/1 備份 20200410/工作/A_ISO續評/2022複評/表單/P003生產流程/瑞肯COA/COA_Etacom_2536_2537" 
 DOCX_FILE_EXTENSION = ".docx"

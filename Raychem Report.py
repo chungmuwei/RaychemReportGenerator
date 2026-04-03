@@ -12,7 +12,12 @@ BUSWAY_TEMPLATE_FILE = generator.resource_path("templates/COA_Busway_template.do
 YUASA_TEMPLATE_FILE = generator.resource_path("templates/COA_Yuasa_template.docx")
 ETACOM_PRODUCT_NAME = ["樹脂CY2536L", "硬化劑HY2536", "硬化劑HY2537"]
 BUSWAY_PRODUCT_NAME = ["CY2533L7", "HY2533"]
-
+COUPLE = {
+    "樹脂CY2536L": "HY2536", 
+    "硬化劑HY2536": "CY2536L", "硬化劑HY2537": "CY2536L", 
+    "CY2533L7": "HY2533",
+    "HY2533": "CY2533L7"
+}
 # PATHS
 CONFIG_FILE = os.path.join(os.path.expanduser("~"), ".raychem_report_config.json")
 PRODUCT_SPECS_FILE = generator.resource_path("product_specs.json")
@@ -92,6 +97,7 @@ def export_type_1_coa_report(sender, app_data, user_data):
         "viscosity_range": product_specs[company][product_name]["viscosity_range"],
         "appearance": product_specs[company][product_name]["appearance"],
         "obs_appearance": product_specs[company][product_name]["appearance"],
+        "couple": COUPLE[product_name],
         "hardness": product_specs[company][product_name]["hardness"],
         "gel_time_range": product_specs[company][product_name]["gel_time_range"],
         "viscosity": viscosity,

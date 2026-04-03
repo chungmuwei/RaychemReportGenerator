@@ -7,7 +7,7 @@ import os
 import json
 
 # ETACOM_TEMPLATE_FILE = generator.resource_path("templates/COA_Etacom_template.docx")
-ETACOM_TEMPLATE_FILE = generator.resource_path("templates/COA_Etacom_template_font_revision.docx") # 標楷體
+ETACOM_TEMPLATE_FILE = generator.resource_path("templates/COA_Etacom_template_font_revision.docx") # 新細明體
 BUSWAY_TEMPLATE_FILE = generator.resource_path("templates/COA_Busway_template.docx")
 YUASA_TEMPLATE_FILE = generator.resource_path("templates/COA_Yuasa_template.docx")
 ETACOM_PRODUCT_NAME = ["樹脂CY2536L", "硬化劑HY2536", "硬化劑HY2537"]
@@ -19,10 +19,10 @@ COUPLE = {
     "HY2533": "CY2533L7"
 }
 # PATHS
-CONFIG_FILE = os.path.join(os.path.expanduser("~"), ".raychem_report_config.json")
+# CONFIG_FILE = os.path.join(os.path.expanduser("~"), ".raychem_report_config.json")
+CONFIG_FILE = generator.resource_path("config.json")
 PRODUCT_SPECS_FILE = generator.resource_path("product_specs.json")
 DEFAULT_EXPORT_PATH = os.path.expanduser("~")
-EXPORT_PATH = "/Volumes/Business/steven_20200721/1 備份 20200410/工作/A_ISO續評/2022複評/表單/P003生產流程/瑞肯COA" 
 
 def load_last_path():
     """Read last export path from config file"""

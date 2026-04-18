@@ -10,10 +10,10 @@ import json
 ETACOM_TEMPLATE_FILE = generator.resource_path("templates/COA_Etacom_template_font_revision.docx") # 新細明體
 BUSWAY_TEMPLATE_FILE = generator.resource_path("templates/COA_Busway_template.docx")
 YUASA_TEMPLATE_FILE = generator.resource_path("templates/COA_Yuasa_template.docx")
-ETACOM_PRODUCT_NAME = ["樹脂CY2536L", "硬化劑HY2536", "硬化劑HY2537"]
+ETACOM_PRODUCT_NAME = ["樹脂CY2536L", "樹脂CY2536", "硬化劑HY2536", "硬化劑HY2537"]
 BUSWAY_PRODUCT_NAME = ["CY2533L7", "HY2533"]
 COUPLE = {
-    "樹脂CY2536L": "HY2536", 
+    "樹脂CY2536L": "HY2536", "樹脂CY2536": "HY2536", 
     "硬化劑HY2536": "CY2536L", "硬化劑HY2537": "CY2536L", 
     "CY2533L7": "HY2533",
     "HY2533": "CY2533L7"

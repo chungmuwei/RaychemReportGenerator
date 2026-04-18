@@ -231,7 +231,7 @@ def run():
         with dpg.collapsing_header(label="安達康"):
             dpg.add_listbox(label="品名", tag="etacom_product_name", default_value="樹脂CY2536L", items=ETACOM_PRODUCT_NAME, num_items=3)
             dpg.add_input_text(label="批號", tag="etacom_lot_no", default_value="T")
-            dpg.add_input_int(label="黏度 cPs", tag="etacom_viscosity")
+            dpg.add_input_float(label="黏度 cPs", tag="etacom_viscosity")
             dpg.add_input_int(label="凝膠時間 sec", tag="etacom_gel_time")
             dpg.add_input_text(label="檢測日期(YYYYMMDD)", tag="etacom_date", default_value=time.strftime("%Y%m%d"))
             
@@ -245,7 +245,7 @@ def run():
         with dpg.collapsing_header(label="巴斯威爾"):
             dpg.add_listbox(label="品名", tag="busway_product_name", default_value="CY2533L7", items=BUSWAY_PRODUCT_NAME, num_items=2)
             dpg.add_input_text(label="批號", tag="busway_lot_no", default_value="T")
-            dpg.add_input_int(label="黏度 cPs", tag="busway_viscosity")
+            dpg.add_input_float(label="黏度 cPs", tag="busway_viscosity")
             dpg.add_input_int(label="凝膠時間 sec", tag="busway_gel_time")
             dpg.add_input_text(label="檢測日期(YYYYMMDD)", tag="busway_date", default_value=time.strftime("%Y%m%d"))
             dpg.add_file_dialog(label="輸出巴斯威爾報告", tag="busway_file_dialog", 
@@ -283,18 +283,6 @@ def run():
         dpg.bind_item_handler_registry(item="etacom_export_button", handler_registry="etacom_export_button_handler")
         dpg.bind_item_handler_registry(item="busway_export_button", handler_registry="busway_export_button_handler")
         dpg.bind_item_handler_registry(item="yuasa_export_button", handler_registry="yuasa_export_button_handler")
-
-    ################################################################
-    #                          Handlers                            #
-    ################################################################
-    # with dpg.item_handler_registry(tag="etacom_export_button_handler") as handler:
-    #     dpg.add_item_clicked_handler(callback=export_type_1_coa_report, user_data={"company": "etacom_", "template": ETACOM_TEMPLATE_FILE})
-
-    # with dpg.item_handler_registry(tag="busway_export_button_handler") as handler:
-    #     dpg.add_item_clicked_handler(callback=export_type_1_coa_report, user_data={"company": "busway_", "template": BUSWAY_TEMPLATE_FILE})
-
-    # with dpg.item_handler_registry(tag="yuasa_export_button_handler") as handler:
-    #     dpg.add_item_clicked_handler(callback=export_yuasa_coa_report)
 
     dpg.create_viewport(title='瑞肯材料品檢報告產生器', width=900, height=600)
     dpg.setup_dearpygui()

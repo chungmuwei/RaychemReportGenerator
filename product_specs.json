@@ -7,6 +7,13 @@
                 "hardness": ">70", 
                 "gel_time_range": "40~80" 
             },
+            "樹脂CY2536": {
+                "weight": "1300KG", 
+                "viscosity_range": "900~1500", 
+                "appearance": "淡黃色透明液體", 
+                "hardness": ">70", 
+                "gel_time_range": "40~80" 
+            },
             "硬化劑HY2536": {
                 "weight": "1180KG", 
                 "viscosity_range": "400~900", 

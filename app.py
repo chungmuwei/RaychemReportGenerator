@@ -19,28 +19,63 @@ COUPLE = {
     "HY2533": "CY2533L7"
 }
 # PATHS
-# CONFIG_FILE = os.path.join(os.path.expanduser("~"), ".raychem_report_config.json")
-CONFIG_FILE = generator.resource_path("config.json")
+APP_SUPPORT_DIR = os.path.join(
+    os.path.expanduser("~"),
+    "Library",
+    "Application Support",
+    "com.raychemmaterial.coa",
+)
+CONFIG_FILE = os.path.join(APP_SUPPORT_DIR, "config.json")
+LEGACY_CONFIG_FILE = generator.resource_path("config.json")
 PRODUCT_SPECS_FILE = generator.resource_path("product_specs.json")
 DEFAULT_EXPORT_PATH = os.path.expanduser("~")
 
+def ensure_config_dir():
+    """Ensure per-user config directory exists."""
+    os.makedirs(APP_SUPPORT_DIR, exist_ok=True)
+
+def migrate_legacy_config_if_needed():
+    """One-time migration from legacy bundled config.json to per-user config."""
+    if os.path.exists(CONFIG_FILE):
+        return
+
+    candidate_path = DEFAULT_EXPORT_PATH
+    if os.path.exists(LEGACY_CONFIG_FILE):
+        try:
+            with open(LEGACY_CONFIG_FILE, "r") as f:
+                data = json.load(f)
+            legacy_path = data.get("last_export_path")
+            if legacy_path and os.path.isdir(legacy_path):
+                candidate_path = legacy_path
+        except Exception:
+            pass
+
+    save_last_path(candidate_path)
+
 def load_last_path():
     """Read last export path from config file"""
+    ensure_config_dir()
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, 'r') as f:
                 data = json.load(f)
-                return data.get("last_export_path", DEFAULT_EXPORT_PATH)
-        except:
+                saved_path = data.get("last_export_path", DEFAULT_EXPORT_PATH)
+                if saved_path and os.path.isdir(saved_path):
+                    return saved_path
+                return DEFAULT_EXPORT_PATH
+        except Exception:
             return DEFAULT_EXPORT_PATH
     return DEFAULT_EXPORT_PATH
 
 def save_last_path(path: str):
     """Save last export path to config file"""
+    ensure_config_dir()
+    if not path or not os.path.isdir(path):
+        path = DEFAULT_EXPORT_PATH
     try:
         with open(CONFIG_FILE, 'w') as f:
             json.dump({"last_export_path": path}, f)
-    except:
+    except Exception:
         pass
 
 # 新增顯示訊息的函式
@@ -187,7 +222,7 @@ def show_file_dialog(sender, app_data, user_data):
     """
     dialog_tag = user_data
     
-    # 讀取最新的路徑 (從 config.json)
+    # 讀取最新的路徑（從使用者設定檔）
     current_path = load_last_path()
     
     # 更新對話框的預設路徑
@@ -199,6 +234,7 @@ def show_file_dialog(sender, app_data, user_data):
 def run():
 
     dpg.create_context()
+    migrate_legacy_config_if_needed()
 
     ################################################################
     #                           Fonts                              #

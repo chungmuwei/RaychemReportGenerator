@@ -10,7 +10,6 @@
 ├── app.py                    # 主程式（GUI 入口）
 ├── generator.py              # 報告產生邏輯（docxtpl）
 ├── product_specs.json        # 各產品規格資料
-├── config.json               # 儲存上次匯出路徑
 ├── requirements.txt
 ├── Makefile                  # 建置指令
 ├── RaychemReport.spec        # PyInstaller macOS 設定
@@ -25,6 +24,14 @@
 └── .github/workflows/
     └── build.yml             # GitHub Actions 自動建置
 ```
+
+---
+
+## 匯出路徑設定檔（macOS）
+
+程式會將「上次匯出路徑」儲存在：
+
+`~/Library/Application Support/com.raychemmaterial.coa/config.json`
 
 ---
 

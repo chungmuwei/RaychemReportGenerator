@@ -17,8 +17,8 @@ cd "$PROJECT_ROOT"
 APP_NAME="瑞肯COA"
 SPEC_FILE="RaychemReport.spec"
 VENV_PYTHON="venv/bin/python"
-VENV_PYINSTALLER="venv/bin/pyinstaller"
 DIST_DIR="dist"
+PYINSTALLER_CONFIG_DIR="${PROJECT_ROOT}/.pyinstaller"
 
 # 版本：優先用環境變數（GitHub Actions 會傳入），否則從 git tag 自動取得
 APP_VERSION="${APP_VERSION:-$(git describe --tags --abbrev=0 2>/dev/null || echo 'dev')}"
@@ -28,9 +28,15 @@ echo "=========================================="
 echo " 瑞肯COA macOS Build Script"
 echo "=========================================="
 
-# 確認 venv 存在
-if [ ! -f "$VENV_PYINSTALLER" ]; then
-    echo "錯誤：找不到 $VENV_PYINSTALLER，請先建立 venv 並安裝依賴。"
+# 確認 venv python 存在
+if [ ! -x "$VENV_PYTHON" ]; then
+    echo "錯誤：找不到可執行的 $VENV_PYTHON，請先建立 venv 並安裝依賴。"
+    exit 1
+fi
+
+# 確認 PyInstaller 可用（使用 python -m，避免 venv 搬移後 shebang 路徑失效）
+if ! "$VENV_PYTHON" -m PyInstaller --version > /dev/null 2>&1; then
+    echo "錯誤：venv 中未安裝 PyInstaller，請執行：venv/bin/pip install pyinstaller"
     exit 1
 fi
 
@@ -48,7 +54,8 @@ rm -rf "build/" "${DIST_DIR}/" || true
 # 執行 PyInstaller
 echo ""
 echo "[2/3] 執行 PyInstaller..."
-"$VENV_PYINSTALLER" "$SPEC_FILE" --clean
+mkdir -p "$PYINSTALLER_CONFIG_DIR"
+PYINSTALLER_CONFIG_DIR="$PYINSTALLER_CONFIG_DIR" "$VENV_PYTHON" -m PyInstaller "$SPEC_FILE" --clean
 
 APP_PATH="${DIST_DIR}/${APP_NAME}.app"
 if [ ! -d "$APP_PATH" ]; then
@@ -66,6 +73,8 @@ rm -f "$DMG_OUTPUT"
 # 建立暫存目錄，只包含 .app，避免 dist/ 中的資料夾也被放入 DMG
 STAGING_DIR=$(mktemp -d)
 cp -r "${APP_PATH}" "${STAGING_DIR}/"
+
+codesign --force --deep --sign - "${APP_PATH}"
 
 create-dmg \
     --volname "${APP_NAME}" \

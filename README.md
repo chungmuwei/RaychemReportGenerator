@@ -157,3 +157,7 @@ make tag VERSION_ARG=v1.0.0
 | `make` 或 `make build` | 本機建置 macOS .app + DMG |
 | `make clean` | 清除 build/、dist/、release/ |
 | `make tag VERSION_ARG=vX.Y.Z` | 打版本 tag 並推送，觸發 CI |
+
+## TODO
+1. Error handling and show rerror windows on GUI
+2. Use tkinter for native file dialog 

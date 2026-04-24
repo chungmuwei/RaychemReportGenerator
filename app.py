@@ -121,7 +121,7 @@ def export_type_1_coa_report(sender, app_data, user_data):
     test_date = dpg.get_value(company+"_date")
     product_name = dpg.get_value(company+"_product_name")
     lot_no = dpg.get_value(company+"_lot_no")
-    viscosity = dpg.get_value(company+"_viscosity")
+    viscosity = f"{dpg.get_value(company+'_viscosity'):#.4g}"
     gel_time = dpg.get_value(company+"_gel_time")
 
     context = {

@@ -121,7 +121,9 @@ def export_type_1_coa_report(sender, app_data, user_data):
     test_date = dpg.get_value(company+"_date")
     product_name = dpg.get_value(company+"_product_name")
     lot_no = dpg.get_value(company+"_lot_no")
-    viscosity = f"{dpg.get_value(company+'_viscosity'):#.4g}"
+    viscosity = dpg.get_value(company+'_viscosity')
+    # if viscosity < 1000, show 4 significant digits, otherwise round to integer
+    viscosity = f"{viscosity:#.4g}" if viscosity < 1000 else round(viscosity)
     gel_time = dpg.get_value(company+"_gel_time")
 
     context = {

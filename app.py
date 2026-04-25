@@ -6,6 +6,8 @@ from dateutil.relativedelta import relativedelta
 import os  
 import json
 
+DEBUG = False
+
 # ETACOM_TEMPLATE_FILE = generator.resource_path("templates/COA_Etacom_template.docx")
 ETACOM_TEMPLATE_FILE = generator.resource_path("templates/COA_Etacom_template_font_revision.docx") # 新細明體
 BUSWAY_TEMPLATE_FILE = generator.resource_path("templates/COA_Busway_template.docx")
@@ -23,60 +25,67 @@ APP_SUPPORT_DIR = os.path.join(
     os.path.expanduser("~"),
     "Library",
     "Application Support",
-    "com.raychemmaterial.coa",
+    "com.raychemcoa",
 )
-CONFIG_FILE = os.path.join(APP_SUPPORT_DIR, "config.json")
-LEGACY_CONFIG_FILE = generator.resource_path("config.json")
+CONFIG_FILE = os.path.join(APP_SUPPORT_DIR, "export_config.json")
 PRODUCT_SPECS_FILE = generator.resource_path("product_specs.json")
 DEFAULT_EXPORT_PATH = os.path.expanduser("~")
+export_paths = {"etacom": DEFAULT_EXPORT_PATH, "busway": DEFAULT_EXPORT_PATH, "yuasa": DEFAULT_EXPORT_PATH}
 
-def ensure_config_dir():
-    """Ensure per-user config directory exists."""
+
+def create_export_config_file():
+    """Create config file at APP_SUPPORT_DIR/CONFIG_FILE to store export paths if it doesn't exist."""
+    if DEBUG:
+        print(f"Creating export config file at {CONFIG_FILE} with default paths: {export_paths}")
+    # Make sure the config directory exists before creating the config file
     os.makedirs(APP_SUPPORT_DIR, exist_ok=True)
+    # Dump default export paths to config file
+    with open(CONFIG_FILE, 'w') as f:
+            json.dump(obj=export_paths, fp=f)
 
-def migrate_legacy_config_if_needed():
-    """One-time migration from legacy bundled config.json to per-user config."""
-    if os.path.exists(CONFIG_FILE):
-        return
+def load_last_path(company: str):
+    """Read last export path for a specific company from config file"""
+    
+    # If config file doesn't exist, create one with default export paths.
+    if not os.path.exists(CONFIG_FILE):
+        create_export_config_file()
+    
+    try:
+        with open(CONFIG_FILE, 'r') as f:
+            data = json.load(f)
+            saved_path = data.get(f"{company}_export_path", DEFAULT_EXPORT_PATH)
+            if saved_path and os.path.isdir(saved_path):
+                return saved_path
+            return DEFAULT_EXPORT_PATH
+    except Exception:
+        return DEFAULT_EXPORT_PATH
+    return DEFAULT_EXPORT_PATH
 
-    candidate_path = DEFAULT_EXPORT_PATH
-    if os.path.exists(LEGACY_CONFIG_FILE):
-        try:
-            with open(LEGACY_CONFIG_FILE, "r") as f:
-                data = json.load(f)
-            legacy_path = data.get("last_export_path")
-            if legacy_path and os.path.isdir(legacy_path):
-                candidate_path = legacy_path
-        except Exception:
-            pass
+def save_all_paths(paths: dict):
+    """Save export paths for all companies to config file"""
+    
+    # If config file doesn't exist, create one with default export paths.
+    if not os.path.exists(CONFIG_FILE):
+        create_export_config_file()
 
-    save_last_path(candidate_path)
-
-def load_last_path():
-    """Read last export path from config file"""
-    ensure_config_dir()
+    data = {}
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, 'r') as f:
                 data = json.load(f)
-                saved_path = data.get("last_export_path", DEFAULT_EXPORT_PATH)
-                if saved_path and os.path.isdir(saved_path):
-                    return saved_path
-                return DEFAULT_EXPORT_PATH
         except Exception:
-            return DEFAULT_EXPORT_PATH
-    return DEFAULT_EXPORT_PATH
-
-def save_last_path(path: str):
-    """Save last export path to config file"""
-    ensure_config_dir()
-    if not path or not os.path.isdir(path):
-        path = DEFAULT_EXPORT_PATH
+            pass
+    for company, path in paths.items():
+        if path and os.path.isdir(path):
+            data[f"{company}_export_path"] = path
     try:
         with open(CONFIG_FILE, 'w') as f:
-            json.dump({"last_export_path": path}, f)
-    except Exception:
-        pass
+            json.dump(data, f)
+        if DEBUG:
+            print(f"Saved export config paths: {paths}")
+    except Exception as e:
+        if DEBUG:
+            print(f"Failed to save export config paths: {str(e)}")
 
 # 新增顯示訊息的函式
 def show_message(title, message, window_width=450, window_height=150, centred=True):
@@ -103,13 +112,18 @@ def export_type_1_coa_report(sender, app_data, user_data):
     """
     Export Certificate of Analysis report word document for Etacon and Busway
     """
-
-    # print(f"sender is: {sender}")
-    # print(f"app_data is: {app_data}")
-    # print(f"user_data is: {user_data}")
+    if DEBUG:
+        print("\n====== Exporting Type 1 COA Report ======")
+        print(f"\tsender is: {sender}")
+        print(f"\tapp_data is: {app_data}")
+        print(f"\tuser_data is: {user_data}")
+        print("=========================================\n")
 
     output_dir = app_data["file_path_name"] # get output path from file dialog
-    save_last_path(output_dir)
+    if DEBUG:
+        print(f"Selected output directory: {output_dir}")
+    export_paths[user_data["company"]] = output_dir
+    save_all_paths(export_paths)
     
     with open(PRODUCT_SPECS_FILE, 'r') as f:
         product_specs = json.load(f)
@@ -154,7 +168,8 @@ def export_yuasa_coa_report(sender, app_data, user_data):
 
     # get output path
     output_dir = app_data["file_path_name"]
-    save_last_path(output_dir)
+    export_paths["yuasa"] = output_dir
+    save_all_paths(export_paths)
 
     # get value from user
     company = user_data["company"]
@@ -223,12 +238,10 @@ def show_file_dialog(sender, app_data, user_data):
         user_data: 要顯示的檔案對話框 tag (str)
     """
     dialog_tag = user_data
+    company = dialog_tag.replace("_file_dialog", "")
     
-    # 讀取最新的路徑（從使用者設定檔）
-    current_path = load_last_path()
-    
-    # 更新對話框的預設路徑
-    dpg.configure_item(dialog_tag, default_path=current_path)
+    # 使用記憶體中對應公司的路徑更新對話框預設路徑
+    dpg.configure_item(dialog_tag, default_path=export_paths[company])
     
     # 顯示對話框
     dpg.show_item(dialog_tag) 
@@ -236,7 +249,9 @@ def show_file_dialog(sender, app_data, user_data):
 def run():
 
     dpg.create_context()
-    migrate_legacy_config_if_needed()
+    export_paths["etacom"] = load_last_path("etacom")
+    export_paths["busway"] = load_last_path("busway")
+    export_paths["yuasa"] = load_last_path("yuasa")
 
     ################################################################
     #                           Fonts                              #
@@ -260,7 +275,6 @@ def run():
     # dpg.show_font_manager()
 
     # dpg.show_style_editor()
-    current_export_path = load_last_path()
     ################################################################
     #                          Windows                             #
     ################################################################
@@ -274,10 +288,11 @@ def run():
             dpg.add_input_text(label="檢測日期(YYYYMMDD)", tag="etacom_date", default_value=time.strftime("%Y%m%d"))
             
             dpg.add_file_dialog(label="輸出安達康報告", tag="etacom_file_dialog", 
-                directory_selector=True, show=False, default_path=current_export_path, 
+                width=700, height=500,
+                directory_selector=True, show=False, default_path=export_paths["etacom"], 
                 callback=export_type_1_coa_report, user_data={"company": "etacom", 
-                "template": ETACOM_TEMPLATE_FILE}, height=500)
-            dpg.add_button(label="輸出報告", tag="etacom_export_button", callback=lambda: dpg.show_item("etacom_file_dialog"), user_data="etacom_file_dialog") 
+                "template": ETACOM_TEMPLATE_FILE})
+            dpg.add_button(label="輸出報告", tag="etacom_export_button", callback=show_file_dialog, user_data="etacom_file_dialog") 
         
         # 巴斯威爾
         with dpg.collapsing_header(label="巴斯威爾"):
@@ -287,10 +302,11 @@ def run():
             dpg.add_input_int(label="凝膠時間 sec", tag="busway_gel_time")
             dpg.add_input_text(label="檢測日期(YYYYMMDD)", tag="busway_date", default_value=time.strftime("%Y%m%d"))
             dpg.add_file_dialog(label="輸出巴斯威爾報告", tag="busway_file_dialog", 
-                directory_selector=True, show=False, default_path=current_export_path, 
+                width=700, height=500,
+                directory_selector=True, show=False, default_path=export_paths["busway"], 
                 callback=export_type_1_coa_report, user_data={"company": "busway", 
-                "template": BUSWAY_TEMPLATE_FILE}, height=500)
-            dpg.add_button(label="輸出報告", tag="busway_export_button", callback=lambda: dpg.show_item("busway_file_dialog"), user_data="busway_file_dialog")
+                "template": BUSWAY_TEMPLATE_FILE})
+            dpg.add_button(label="輸出報告", tag="busway_export_button", callback=show_file_dialog, user_data="busway_file_dialog")
         
         # 湯淺
         with dpg.collapsing_header(label="湯淺"):
@@ -312,17 +328,16 @@ def run():
             dpg.add_input_text(label="檢測日期(YYYYMMDD)", tag="yuasa_date", default_value=time.strftime("%Y%m%d"))
 
             dpg.add_file_dialog(label="輸出湯淺報告", tag="yuasa_file_dialog", 
-                directory_selector=True, show=False, default_path=current_export_path, 
+                width=700, height=500,
+                directory_selector=True, show=False, default_path=export_paths["yuasa"], 
                 callback=export_yuasa_coa_report, user_data={"company": "yuasa", 
-                "template": YUASA_TEMPLATE_FILE}, height=500)
-            dpg.add_button(label="輸出報告", tag="yuasa_export_button", callback=lambda: dpg.show_item("yuasa_file_dialog"), user_data="yuasa_file_dialog")
+                "template": YUASA_TEMPLATE_FILE})
+            dpg.add_button(label="輸出報告", tag="yuasa_export_button", callback=show_file_dialog, user_data="yuasa_file_dialog")
 
         dpg.bind_font(zh_header_font)
-        dpg.bind_item_handler_registry(item="etacom_export_button", handler_registry="etacom_export_button_handler")
-        dpg.bind_item_handler_registry(item="busway_export_button", handler_registry="busway_export_button_handler")
-        dpg.bind_item_handler_registry(item="yuasa_export_button", handler_registry="yuasa_export_button_handler")
 
     dpg.create_viewport(title='瑞肯材料品檢報告產生器', width=900, height=600)
+    dpg.set_exit_callback(lambda s, a, u: save_all_paths(export_paths))
     dpg.setup_dearpygui()
     dpg.show_viewport()
     dpg.set_primary_window("Primary Window", True)

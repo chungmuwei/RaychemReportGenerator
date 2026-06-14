@@ -143,17 +143,32 @@ def parse_positive_int(value: object, label: str) -> int:
 
 def validate_report_date(value: object, label: str = "檢測日期") -> str:
     text = require_text(value, label)
-    if not re.fullmatch(r"\d{8}", text):
-        raise UserInputError(f"{label}格式必須為 YYYYMMDD。")
+    if not re.fullmatch(r"\d{4}/\d{2}/\d{2}", text):
+        raise UserInputError(f"{label}格式必須為 YYYY/MM/DD。")
     try:
-        datetime.strptime(text, "%Y%m%d")
+        datetime.strptime(text, "%Y/%m/%d")
     except ValueError as exc:
         raise UserInputError(f"{label}不是有效日期。") from exc
     return text
 
 
-def format_type_1_viscosity(viscosity: float) -> str | int:
-    return f"{viscosity:.4g}" if viscosity < 1000 else round(viscosity)
+def format_numeric_text(value: object) -> str:
+    text = str(value)
+
+    def format_match(match: re.Match) -> str:
+        raw_number = match.group(0)
+        normalized = raw_number.replace(",", "")
+        if "." in normalized:
+            whole, decimal = normalized.split(".", 1)
+            return f"{int(whole):,}.{decimal}"
+        return f"{int(normalized):,}"
+
+    return re.sub(r"\d[\d,]*(?:\.\d+)?", format_match, text)
+
+
+def format_type_1_viscosity(viscosity: float) -> str:
+    formatted = f"{viscosity:.4g}" if viscosity < 1000 else str(round(viscosity))
+    return format_numeric_text(formatted)
 
 
 def mousewheel_scroll_units(delta: int) -> int:
@@ -183,19 +198,19 @@ def build_type_1_context(company: str, values: dict, product_specs: dict, includ
         "product_name": product_name,
         "date": test_date,
         "lot_no": lot_no,
-        "weight": spec["weight"],
-        "unit_weight": spec.get("unit_weight", ""),
-        "qty": spec.get("qty", ""),
-        "viscosity_range": spec["viscosity_range"],
+        "weight": format_numeric_text(spec["weight"]),
+        "unit_weight": format_numeric_text(spec.get("unit_weight", "")),
+        "qty": format_numeric_text(spec.get("qty", "")),
+        "viscosity_range": format_numeric_text(spec["viscosity_range"]),
         "appearance": spec["appearance"],
         "obs_appearance": spec["appearance"],
         "couple": COUPLE[product_name],
-        "hardness": spec["hardness"],
-        "gel_time_range": spec["gel_time_range"],
+        "hardness": format_numeric_text(spec["hardness"]),
+        "gel_time_range": format_numeric_text(spec["gel_time_range"]),
         "viscosity": format_type_1_viscosity(viscosity),
     }
     if include_gel_time:
-        context["gel_time"] = gel_time
+        context["gel_time"] = format_numeric_text(gel_time)
     return context
 
 
@@ -224,19 +239,23 @@ def build_yuasa_context(values: dict) -> dict:
         "product_name": "AY8000RB",
         "date": test_date,
         "lot_no": lot_no,
-        "ay8000r_quant": parse_positive_int(values.get("ay8000r_quantity"), "AY8000R數量"),
-        "ay8000b_quant": parse_positive_int(values.get("ay8000b_quantity"), "AY8000B數量"),
-        "hy8000_quant": parse_positive_int(values.get("hy8000_quantity"), "HY8000數量"),
-        "due_date": time.strftime("%Y-%m-%d", due_date.timetuple()),
-        "ay8000r_viscosity": parse_positive_int(values.get("ay8000r_viscosity"), "AY8000R 黏度 cPs"),
-        "ay8000b_viscosity": parse_positive_int(values.get("ay8000b_viscosity"), "AY8000B 黏度 cPs"),
-        "hy8000_viscosity": "{:.1f}".format(parse_positive_float(values.get("hy8000_viscosity"), "HY8000 黏度 cPs")),
-        "ay8000r_gel_time": parse_positive_int(values.get("ay8000r_gel_time"), "AY8000R 凝膠時間 sec"),
-        "ay8000b_gel_time": parse_positive_int(values.get("ay8000b_gel_time"), "AY8000B 凝膠時間 sec"),
-        "before_tensile_strength": before_tensile_strength,
-        "after_tensile_strength": after_tensile_strength,
-        "tensile_strength_diff": tensile_strength_diff,
-        "acid_resistance": "{:.2f}".format(parse_positive_float(values.get("acid_resistance"), "耐酸性 %")),
+        "ay8000r_quant": format_numeric_text(parse_positive_int(values.get("ay8000r_quantity"), "AY8000R數量")),
+        "ay8000b_quant": format_numeric_text(parse_positive_int(values.get("ay8000b_quantity"), "AY8000B數量")),
+        "hy8000_quant": format_numeric_text(parse_positive_int(values.get("hy8000_quantity"), "HY8000數量")),
+        "due_date": time.strftime("%Y/%m/%d", due_date.timetuple()),
+        "ay8000r_viscosity": format_numeric_text(parse_positive_int(values.get("ay8000r_viscosity"), "AY8000R 黏度 cPs")),
+        "ay8000b_viscosity": format_numeric_text(parse_positive_int(values.get("ay8000b_viscosity"), "AY8000B 黏度 cPs")),
+        "hy8000_viscosity": format_numeric_text(
+            "{:.1f}".format(parse_positive_float(values.get("hy8000_viscosity"), "HY8000 黏度 cPs"))
+        ),
+        "ay8000r_gel_time": format_numeric_text(parse_positive_int(values.get("ay8000r_gel_time"), "AY8000R 凝膠時間 sec")),
+        "ay8000b_gel_time": format_numeric_text(parse_positive_int(values.get("ay8000b_gel_time"), "AY8000B 凝膠時間 sec")),
+        "before_tensile_strength": format_numeric_text(before_tensile_strength),
+        "after_tensile_strength": format_numeric_text(after_tensile_strength),
+        "tensile_strength_diff": format_numeric_text(tensile_strength_diff),
+        "acid_resistance": format_numeric_text(
+            "{:.2f}".format(parse_positive_float(values.get("acid_resistance"), "耐酸性 %"))
+        ),
     }
 
 
@@ -420,7 +439,7 @@ class COAApp:
         if include_gel_time:
             self.add_entry(parent, next_row, "凝膠時間 sec", f"{company}_gel_time")
             next_row += 1
-        self.add_entry(parent, next_row, "檢測日期(YYYYMMDD)", f"{company}_date", time.strftime("%Y%m%d"))
+        self.add_entry(parent, next_row, "檢測日期(YYYY/MM/DD)", f"{company}_date", time.strftime("%Y/%m/%d"))
         ttk.Button(
             parent,
             text="輸出報告",
@@ -450,7 +469,7 @@ class COAApp:
         self.add_entry(parent, 4, "浸酸前引張強度 Kgf/cm2", "before_tensile_strength")
         self.add_entry(parent, 5, "浸酸後引張強度 Kgf/cm2", "after_tensile_strength")
         self.add_entry(parent, 6, "耐酸性 %", "acid_resistance")
-        self.add_entry(parent, 7, "檢測日期(YYYYMMDD)", "yuasa_date", time.strftime("%Y%m%d"))
+        self.add_entry(parent, 7, "檢測日期(YYYY/MM/DD)", "yuasa_date", time.strftime("%Y/%m/%d"))
         ttk.Button(
             parent,
             text="輸出報告",

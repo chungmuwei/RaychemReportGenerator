@@ -16,7 +16,7 @@ cd "$PROJECT_ROOT"
 
 APP_NAME="瑞肯COA"
 SPEC_FILE="RaychemReport.spec"
-VENV_PYTHON="venv/bin/python"
+VENV_PYTHON=".venv/bin/python"
 DIST_DIR="dist"
 PYINSTALLER_CONFIG_DIR="${PROJECT_ROOT}/.pyinstaller"
 
@@ -36,7 +36,7 @@ fi
 
 # 確認 PyInstaller 可用（使用 python -m，避免 venv 搬移後 shebang 路徑失效）
 if ! "$VENV_PYTHON" -m PyInstaller --version > /dev/null 2>&1; then
-    echo "錯誤：venv 中未安裝 PyInstaller，請執行：venv/bin/pip install pyinstaller"
+    echo "錯誤：.venv 中未安裝 PyInstaller，請執行：.venv/bin/pip install pyinstaller"
     exit 1
 fi
 

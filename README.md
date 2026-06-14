@@ -45,9 +45,9 @@
 ### 建立虛擬環境並安裝依賴
 
 ```bash
-python3.10 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+python3.10 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
 ### 執行程式

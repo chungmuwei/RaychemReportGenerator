@@ -116,9 +116,9 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          python -m venv venv
-          venv/bin/pip install --upgrade pip
-          venv/bin/pip install -r requirements.txt
+          python -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install -r requirements.txt
 
       - name: Install create-dmg
         run: brew install create-dmg
@@ -152,9 +152,9 @@ jobs:
       - name: Install Python dependencies
         shell: pwsh
         run: |
-          python -m venv venv
-          .\venv\Scripts\python.exe -m pip install --upgrade pip
-          .\venv\Scripts\python.exe -m pip install -r requirements.txt
+          python -m venv .venv
+          .\.venv\Scripts\python.exe -m pip install --upgrade pip
+          .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 
       - name: Build EXE
         shell: cmd

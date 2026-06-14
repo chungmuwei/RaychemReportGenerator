@@ -65,7 +65,7 @@ class AppValidationTests(unittest.TestCase):
             "etacom",
             {
                 "product_name": "樹脂CY2536L",
-                "date": "20260614",
+                "date": "2026/06/14",
                 "lot_no": "T260614",
                 "viscosity": "950.25",
                 "gel_time": "55",
@@ -74,11 +74,11 @@ class AppValidationTests(unittest.TestCase):
         )
 
         self.assertEqual(context["product_name"], "樹脂CY2536L")
-        self.assertEqual(context["date"], "20260614")
-        self.assertEqual(context["weight"], "1300KG")
+        self.assertEqual(context["date"], "2026/06/14")
+        self.assertEqual(context["weight"], "1,300KG")
         self.assertEqual(context["couple"], "HY2536")
         self.assertEqual(context["viscosity"], "950.2")
-        self.assertEqual(context["gel_time"], 55)
+        self.assertEqual(context["gel_time"], "55")
 
     def test_build_type_1_context_rejects_missing_lot_no(self):
         with self.assertRaisesRegex(app.UserInputError, "批號不可空白"):
@@ -86,7 +86,7 @@ class AppValidationTests(unittest.TestCase):
                 "etacom",
                 {
                     "product_name": "樹脂CY2536L",
-                    "date": "20260614",
+                    "date": "2026/06/14",
                     "lot_no": "",
                     "viscosity": "950",
                     "gel_time": "55",
@@ -100,7 +100,21 @@ class AppValidationTests(unittest.TestCase):
                 "etacom",
                 {
                     "product_name": "樹脂CY2536L",
-                    "date": "20260230",
+                    "date": "2026/02/30",
+                    "lot_no": "T260614",
+                    "viscosity": "950",
+                    "gel_time": "55",
+                },
+                PRODUCT_SPECS,
+            )
+
+    def test_build_type_1_context_rejects_compact_date_format(self):
+        with self.assertRaisesRegex(app.UserInputError, "YYYY/MM/DD"):
+            app.build_type_1_context(
+                "etacom",
+                {
+                    "product_name": "樹脂CY2536L",
+                    "date": "20260614",
                     "lot_no": "T260614",
                     "viscosity": "950",
                     "gel_time": "55",
@@ -113,7 +127,7 @@ class AppValidationTests(unittest.TestCase):
             "uic",
             {
                 "product_name": "CY8101R",
-                "date": "20260614",
+                "date": "2026/06/14",
                 "lot_no": "T260528",
                 "viscosity": "12158",
             },
@@ -128,7 +142,7 @@ class AppValidationTests(unittest.TestCase):
         self.assertEqual(context["viscosity_range"], "10,000~20,000")
         self.assertEqual(context["appearance"], "Red liquid")
         self.assertEqual(context["obs_appearance"], "Red liquid")
-        self.assertEqual(context["viscosity"], 12158)
+        self.assertEqual(context["viscosity"], "12,158")
         self.assertNotIn("gel_time", context)
 
     def test_uic_context_renders_uic_template(self):
@@ -136,7 +150,7 @@ class AppValidationTests(unittest.TestCase):
             "uic",
             {
                 "product_name": "HY8101",
-                "date": "20260614",
+                "date": "2026/06/14",
                 "lot_no": "T260528",
                 "viscosity": "30",
             },
@@ -153,10 +167,10 @@ class AppValidationTests(unittest.TestCase):
     def test_build_yuasa_context_calculates_due_date_and_tensile_diff(self):
         context = app.build_yuasa_context(
             {
-                "date": "20260614",
+                "date": "2026/06/14",
                 "lot_no": "T260101",
-                "ay8000r_quantity": "1",
-                "ay8000r_viscosity": "120",
+                "ay8000r_quantity": "1200",
+                "ay8000r_viscosity": "1258",
                 "ay8000r_gel_time": "60",
                 "ay8000b_quantity": "2",
                 "ay8000b_viscosity": "130",
@@ -170,16 +184,19 @@ class AppValidationTests(unittest.TestCase):
         )
 
         self.assertEqual(context["product_name"], "AY8000RB")
-        self.assertEqual(context["due_date"], "2026-07-01")
+        self.assertEqual(context["date"], "2026/06/14")
+        self.assertEqual(context["due_date"], "2026/07/01")
+        self.assertEqual(context["ay8000r_quant"], "1,200")
+        self.assertEqual(context["ay8000r_viscosity"], "1,258")
         self.assertEqual(context["hy8000_viscosity"], "88.5")
-        self.assertEqual(context["tensile_strength_diff"], 8.0)
+        self.assertEqual(context["tensile_strength_diff"], "8.0")
         self.assertEqual(context["acid_resistance"], "98.23")
 
     def test_build_yuasa_context_rejects_invalid_lot_number(self):
         with self.assertRaisesRegex(app.UserInputError, "湯淺批號格式錯誤"):
             app.build_yuasa_context(
                 {
-                    "date": "20260614",
+                    "date": "2026/06/14",
                     "lot_no": "T26",
                     "ay8000r_quantity": "1",
                     "ay8000r_viscosity": "120",
@@ -205,7 +222,12 @@ class AppValidationTests(unittest.TestCase):
     def test_type_1_viscosity_format_avoids_forced_trailing_zeroes(self):
         self.assertEqual(app.format_type_1_viscosity(30), "30")
         self.assertEqual(app.format_type_1_viscosity(950.25), "950.2")
-        self.assertEqual(app.format_type_1_viscosity(12158), 12158)
+        self.assertEqual(app.format_type_1_viscosity(12158), "12,158")
+
+    def test_numeric_text_format_adds_commas_without_changing_decimals(self):
+        self.assertEqual(app.format_numeric_text("1300KG"), "1,300KG")
+        self.assertEqual(app.format_numeric_text("1000~1500"), "1,000~1,500")
+        self.assertEqual(app.format_numeric_text("1234.5"), "1,234.5")
 
 
 class AppCallbackTests(unittest.TestCase):
@@ -246,7 +268,7 @@ class AppCallbackTests(unittest.TestCase):
             app_obj.ask_output_directory = lambda company, title: tmpdir
             app_obj.get_type_1_values = lambda company, include_gel_time=True: {
                 "product_name": "樹脂CY2536L",
-                "date": "20260614",
+                "date": "2026/06/14",
                 "lot_no": "T260614",
                 "viscosity": "950",
                 "gel_time": "55",
@@ -271,7 +293,7 @@ class AppCallbackTests(unittest.TestCase):
         app_obj.product_specs = PRODUCT_SPECS
         app_obj.get_type_1_values = lambda company, include_gel_time=True: {
             "product_name": "樹脂CY2536L",
-            "date": "20260614",
+            "date": "2026/06/14",
             "lot_no": "",
             "viscosity": "950",
             "gel_time": "55",
@@ -296,7 +318,7 @@ class AppCallbackTests(unittest.TestCase):
             app_obj.ask_output_directory = lambda company, title: tmpdir
             app_obj.get_type_1_values = lambda company, include_gel_time=True: {
                 "product_name": "HY8101",
-                "date": "20260614",
+                "date": "2026/06/14",
                 "lot_no": "T260528",
                 "viscosity": "30",
             }
@@ -318,7 +340,7 @@ class AppCallbackTests(unittest.TestCase):
     def test_yuasa_validation_error_shows_before_directory_dialog(self):
         app_obj = self.make_uninitialized_app()
         app_obj.get_yuasa_values = lambda: {
-            "date": "20260614",
+            "date": "2026/06/14",
             "lot_no": "T26",
             "ay8000r_quantity": "1",
             "ay8000r_viscosity": "120",

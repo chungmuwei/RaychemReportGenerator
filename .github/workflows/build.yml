@@ -55,7 +55,11 @@ jobs:
         shell: bash
         run: |
           git fetch origin main:refs/remotes/origin/main
-          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Tagged commit $GITHUB_SHA is not contained in origin/main."
+            echo "Push main first, then rerun this workflow. If the tag was created from the wrong commit, delete and recreate the tag from origin/main."
+            exit 1
+          fi
 
       - name: Determine release behavior
         id: release

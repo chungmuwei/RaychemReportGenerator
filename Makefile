@@ -23,6 +23,12 @@ tag:
 	@if ! git diff --quiet || ! git diff --cached --quiet; then \
 		echo "錯誤：工作目錄尚有未提交變更，請先 commit 或 stash。"; exit 1; \
 	fi
+	git fetch origin main:refs/remotes/origin/main
+	@if [ "$$(git rev-parse HEAD)" != "$$(git rev-parse origin/main)" ]; then \
+		echo "錯誤：本機 main 與 origin/main 不同步，不能建立 release tag。"; \
+		echo "請先執行 git pull --ff-only origin main，或先 git push origin main 後再打 tag。"; \
+		exit 1; \
+	fi
 	git tag -a $(VERSION_ARG) -m "Release $(VERSION_ARG)"
 	git push origin $(VERSION_ARG)
 	@echo "✓ 已推送 tag $(VERSION_ARG)，GitHub Actions 正在建立 release..."

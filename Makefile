@@ -12,6 +12,11 @@ tag:
 	@if [ "$(VERSION_ARG)" = "" ]; then \
 		echo "用法：make tag VERSION_ARG=v1.0.0"; exit 1; \
 	fi
+	@if ! printf '%s\n' "$(VERSION_ARG)" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$$'; then \
+		echo "錯誤：版本號格式錯誤：$(VERSION_ARG)"; \
+		echo "請使用 vMAJOR.MINOR.PATCH，例如 v1.1.0 或 v1.1.0-beta.1"; \
+		exit 1; \
+	fi
 	@if [ "$$(git branch --show-current)" != "main" ]; then \
 		echo "錯誤：請先切到 main 並 pull 最新版本後再建立 release tag。"; exit 1; \
 	fi

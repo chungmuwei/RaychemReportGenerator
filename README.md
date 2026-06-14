@@ -56,6 +56,12 @@ pip install -r requirements.txt
 python app.py
 ```
 
+### 執行測試
+
+```bash
+python -m unittest discover -v
+```
+
 ---
 
 ## 套件與工具
@@ -64,13 +70,14 @@ python app.py
 
 | 套件 | 版本 | 用途 |
 |---|---|---|
-| [dearpygui](https://github.com/hoffstadt/DearPyGui) | 1.8.0 | GUI 框架 |
-| [docxtpl](https://docxtpl.readthedocs.io/) | 0.16.4 | Word 模板渲染（Jinja2 語法） |
-| [python-docx](https://python-docx.readthedocs.io/) | 0.8.11 | Word 文件操作 |
-| [docxcompose](https://github.com/4teamwork/docxcompose) | 1.4.0 | 合併 Word 文件 |
+| tkinter | Python standard library | GUI 框架與原生檔案對話框 |
+| [docxtpl](https://docxtpl.readthedocs.io/) | 0.20.2 | Word 模板渲染（Jinja2 語法） |
+| [python-docx](https://python-docx.readthedocs.io/) | 1.2.0 | Word 文件操作 |
+| [docxcompose](https://github.com/4teamwork/docxcompose) | 2.2.0 | 合併 Word 文件 |
 | [python-dateutil](https://dateutil.readthedocs.io/) | 2.9.0 | 日期計算（有效期限推算）|
-| Jinja2 | 3.1.2 | 模板引擎（docxtpl 依賴）|
-| lxml | 4.9.2 | XML 解析（python-docx 依賴）|
+| [PyInstaller](https://pyinstaller.org/) | 6.21.0 | 打包成獨立執行檔（.app / .exe）|
+| Jinja2 | 3.1.6 | 模板引擎（docxtpl 依賴）|
+| lxml | 6.1.1 | XML 解析（python-docx 依賴）|
 
 ### 建置工具
 
@@ -159,5 +166,5 @@ make tag VERSION_ARG=v1.0.0
 | `make tag VERSION_ARG=vX.Y.Z` | 打版本 tag 並推送，觸發 CI |
 
 ## TODO
-1. Error handling and show rerror windows on GUI
-2. Use tkinter for native file dialog 
+
+目前無已知待辦事項。

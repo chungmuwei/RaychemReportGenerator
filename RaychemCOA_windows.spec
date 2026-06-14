@@ -10,7 +10,6 @@ a = Analysis(
         ('templates', 'templates'),
         ('fonts', 'fonts'),
         ('product_specs.json', '.'),
-        ('config.json', '.'),
     ],
     hiddenimports=[],
     hookspath=[],

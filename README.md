@@ -133,14 +133,20 @@ scripts\build_win.bat
 ### 發佈新版本
 
 ```bash
+git checkout main
+git pull origin main
+python -m unittest discover -v
 make tag VERSION_ARG=v1.0.0
 ```
 
 這個指令會：
 1. 在當前 commit 建立 git tag
 2. 將 tag push 到 GitHub
-3. 自動觸發 GitHub Actions 建置 macOS DMG
-4. 在 GitHub Releases 頁面發佈可下載的安裝檔
+3. 自動觸發 GitHub Actions 執行 macOS / Windows 測試
+4. 測試通過後建置 macOS DMG 與 Windows ZIP
+5. 在 GitHub Releases 頁面發佈可下載的安裝檔
+
+> Release tag 必須指向已合併到 `main` 的 commit；GitHub Actions 會檢查 tag commit 是否包含在 `origin/main` 中。
 
 ### 版本號規則
 
@@ -153,7 +159,17 @@ make tag VERSION_ARG=v1.0.0
 
 ### 手動觸發建置
 
-在 GitHub → Actions → **Build 瑞肯COA** → **Run workflow**，可輸入版本號並選擇是否發佈 Release。
+在 GitHub → Actions → **Release 瑞肯COA** → **Run workflow**，可輸入版本號並選擇是否發佈 Release。
+
+### GitHub Actions CI/CD
+
+`.github/workflows/build.yml` 會在推送 `v*` tag 時自動執行：
+
+1. 驗證版本號格式與 tag commit 是否在 `main`
+2. 在 macOS 與 Windows runner 上安裝依賴並執行測試
+3. 建置 `release/*.dmg`
+4. 建置 `release/*.zip`（Windows app 資料夾）
+5. 建立 GitHub Release 並上傳兩個平台的安裝檔
 
 ---
 

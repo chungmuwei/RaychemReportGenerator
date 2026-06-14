@@ -12,6 +12,12 @@ tag:
 	@if [ "$(VERSION_ARG)" = "" ]; then \
 		echo "用法：make tag VERSION_ARG=v1.0.0"; exit 1; \
 	fi
+	@if [ "$$(git branch --show-current)" != "main" ]; then \
+		echo "錯誤：請先切到 main 並 pull 最新版本後再建立 release tag。"; exit 1; \
+	fi
+	@if ! git diff --quiet || ! git diff --cached --quiet; then \
+		echo "錯誤：工作目錄尚有未提交變更，請先 commit 或 stash。"; exit 1; \
+	fi
 	git tag -a $(VERSION_ARG) -m "Release $(VERSION_ARG)"
 	git push origin $(VERSION_ARG)
 	@echo "✓ 已推送 tag $(VERSION_ARG)，GitHub Actions 正在建立 release..."

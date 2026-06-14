@@ -29,6 +29,17 @@ tag:
 		echo "請先執行 git pull --ff-only origin main，或先 git push origin main 後再打 tag。"; \
 		exit 1; \
 	fi
+	@if git show-ref --verify --quiet "refs/tags/$(VERSION_ARG)"; then \
+		echo "錯誤：本機 tag $(VERSION_ARG) 已存在。"; \
+		echo "請改用下一個版本，例如 $(VERSION_ARG)-next，或先刪除本機與遠端舊 tag 後再重建。"; \
+		exit 1; \
+	fi
+	@if git ls-remote --exit-code --tags origin "refs/tags/$(VERSION_ARG)" >/dev/null 2>&1; then \
+		echo "錯誤：遠端 tag $(VERSION_ARG) 已存在於 origin。"; \
+		echo "如果只是先前 GitHub Actions 失敗，請到 GitHub Actions 重新執行該 tag 的 workflow。"; \
+		echo "若要重新建立同一個 tag，請先刪除本機與遠端舊 tag。"; \
+		exit 1; \
+	fi
 	git tag -a $(VERSION_ARG) -m "Release $(VERSION_ARG)"
 	git push origin $(VERSION_ARG)
 	@echo "✓ 已推送 tag $(VERSION_ARG)，GitHub Actions 正在建立 release..."

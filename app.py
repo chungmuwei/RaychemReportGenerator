@@ -20,8 +20,10 @@ DEBUG = False
 ETACOM_TEMPLATE_FILE = generator.resource_path("templates/COA_Etacom_template_font_revision.docx")  # 新細明體
 BUSWAY_TEMPLATE_FILE = generator.resource_path("templates/COA_Busway_template.docx")
 YUASA_TEMPLATE_FILE = generator.resource_path("templates/COA_Yuasa_template.docx")
+UIC_TEMPLATE_FILE = generator.resource_path("templates/COA_UIC_template.docx")
 ETACOM_PRODUCT_NAME = ["樹脂CY2536L", "樹脂CY2536", "硬化劑HY2536", "硬化劑HY2537"]
 BUSWAY_PRODUCT_NAME = ["CY2533L7", "HY2533"]
+UIC_PRODUCT_NAME = ["CY8101R", "HY8101"]
 COUPLE = {
     "樹脂CY2536L": "HY2536",
     "樹脂CY2536": "HY2536",
@@ -29,6 +31,8 @@ COUPLE = {
     "硬化劑HY2537": "CY2536L",
     "CY2533L7": "HY2533",
     "HY2533": "CY2533L7",
+    "CY8101R": "HY8101",
+    "HY8101": "CY8101R",
 }
 
 # PATHS
@@ -41,7 +45,12 @@ APP_SUPPORT_DIR = os.path.join(
 CONFIG_FILE = os.path.join(APP_SUPPORT_DIR, "export_config.json")
 PRODUCT_SPECS_FILE = generator.resource_path("product_specs.json")
 DEFAULT_EXPORT_PATH = os.path.expanduser("~")
-export_paths = {"etacom": DEFAULT_EXPORT_PATH, "busway": DEFAULT_EXPORT_PATH, "yuasa": DEFAULT_EXPORT_PATH}
+export_paths = {
+    "etacom": DEFAULT_EXPORT_PATH,
+    "busway": DEFAULT_EXPORT_PATH,
+    "uic": DEFAULT_EXPORT_PATH,
+    "yuasa": DEFAULT_EXPORT_PATH,
+}
 
 
 class UserInputError(ValueError):
@@ -144,7 +153,7 @@ def validate_report_date(value: object, label: str = "檢測日期") -> str:
 
 
 def format_type_1_viscosity(viscosity: float) -> str | int:
-    return f"{viscosity:#.4g}" if viscosity < 1000 else round(viscosity)
+    return f"{viscosity:.4g}" if viscosity < 1000 else round(viscosity)
 
 
 def mousewheel_scroll_units(delta: int) -> int:
@@ -155,7 +164,7 @@ def mousewheel_scroll_units(delta: int) -> int:
     return -1 if delta > 0 else 1
 
 
-def build_type_1_context(company: str, values: dict, product_specs: dict) -> dict:
+def build_type_1_context(company: str, values: dict, product_specs: dict, include_gel_time: bool = True) -> dict:
     product_name = require_text(values.get("product_name"), "品名")
     if company not in product_specs:
         raise UserInputError(f"找不到 {company} 的產品規格。")
@@ -167,14 +176,16 @@ def build_type_1_context(company: str, values: dict, product_specs: dict) -> dic
     test_date = validate_report_date(values.get("date"))
     lot_no = require_text(values.get("lot_no"), "批號")
     viscosity = parse_positive_float(values.get("viscosity"), "黏度 cPs")
-    gel_time = parse_positive_int(values.get("gel_time"), "凝膠時間 sec")
+    gel_time = parse_positive_int(values.get("gel_time"), "凝膠時間 sec") if include_gel_time else None
     spec = product_specs[company][product_name]
 
-    return {
+    context = {
         "product_name": product_name,
         "date": test_date,
         "lot_no": lot_no,
         "weight": spec["weight"],
+        "unit_weight": spec.get("unit_weight", ""),
+        "qty": spec.get("qty", ""),
         "viscosity_range": spec["viscosity_range"],
         "appearance": spec["appearance"],
         "obs_appearance": spec["appearance"],
@@ -182,8 +193,10 @@ def build_type_1_context(company: str, values: dict, product_specs: dict) -> dic
         "hardness": spec["hardness"],
         "gel_time_range": spec["gel_time_range"],
         "viscosity": format_type_1_viscosity(viscosity),
-        "gel_time": gel_time,
     }
+    if include_gel_time:
+        context["gel_time"] = gel_time
+    return context
 
 
 def build_yuasa_context(values: dict) -> dict:
@@ -332,7 +345,18 @@ class COAApp:
             template=BUSWAY_TEMPLATE_FILE,
         )
 
-        yuasa = self.add_company_tab("yuasa", "湯淺", 2)
+        uic = self.add_company_tab("uic", "盛英", 2)
+        self.build_type_1_section(
+            uic,
+            company="uic",
+            products=UIC_PRODUCT_NAME,
+            default_product="CY8101R",
+            visible_products=2,
+            template=UIC_TEMPLATE_FILE,
+            include_gel_time=False,
+        )
+
+        yuasa = self.add_company_tab("yuasa", "湯淺", 3)
         self.build_yuasa_section(yuasa)
         self.switch_company("etacom")
         self.root.bind_all("<MouseWheel>", self.on_mousewheel)
@@ -387,17 +411,21 @@ class COAApp:
         default_product: str,
         visible_products: int,
         template: str,
+        include_gel_time: bool = True,
     ):
         self.add_listbox(parent, 0, "品名", f"{company}_product_name", products, default_product, visible_products)
         self.add_entry(parent, 1, "批號", f"{company}_lot_no", "T")
         self.add_entry(parent, 2, "黏度 cPs", f"{company}_viscosity")
-        self.add_entry(parent, 3, "凝膠時間 sec", f"{company}_gel_time")
-        self.add_entry(parent, 4, "檢測日期(YYYYMMDD)", f"{company}_date", time.strftime("%Y%m%d"))
+        next_row = 3
+        if include_gel_time:
+            self.add_entry(parent, next_row, "凝膠時間 sec", f"{company}_gel_time")
+            next_row += 1
+        self.add_entry(parent, next_row, "檢測日期(YYYYMMDD)", f"{company}_date", time.strftime("%Y%m%d"))
         ttk.Button(
             parent,
             text="輸出報告",
-            command=self.safe_callback(lambda: self.export_type_1_report(company, template)),
-        ).grid(row=5, column=1, sticky="w", pady=(8, 0))
+            command=self.safe_callback(lambda: self.export_type_1_report(company, template, include_gel_time)),
+        ).grid(row=next_row + 1, column=1, sticky="w", pady=(8, 0))
 
     def build_yuasa_section(self, parent):
         self.add_entry(parent, 0, "批號", "yuasa_lot_no", "T")
@@ -465,14 +493,16 @@ class COAApp:
             return ""
         return self.listboxes[key].get(selection[0])
 
-    def get_type_1_values(self, company: str) -> dict:
-        return {
+    def get_type_1_values(self, company: str, include_gel_time: bool = True) -> dict:
+        values = {
             "product_name": self.get_listbox_value(f"{company}_product_name"),
             "date": self.vars[f"{company}_date"].get(),
             "lot_no": self.vars[f"{company}_lot_no"].get(),
             "viscosity": self.vars[f"{company}_viscosity"].get(),
-            "gel_time": self.vars[f"{company}_gel_time"].get(),
         }
+        if include_gel_time:
+            values["gel_time"] = self.vars[f"{company}_gel_time"].get()
+        return values
 
     def get_yuasa_values(self) -> dict:
         keys = [
@@ -503,8 +533,13 @@ class COAApp:
         save_all_paths(export_paths)
         return output_dir
 
-    def export_type_1_report(self, company: str, template: str):
-        context = build_type_1_context(company, self.get_type_1_values(company), self.product_specs)
+    def export_type_1_report(self, company: str, template: str, include_gel_time: bool = True):
+        context = build_type_1_context(
+            company,
+            self.get_type_1_values(company, include_gel_time),
+            self.product_specs,
+            include_gel_time,
+        )
         output_dir = self.ask_output_directory(company, "選擇報告輸出資料夾")
         if not output_dir:
             return
@@ -563,6 +598,7 @@ class COAApp:
 def run():
     export_paths["etacom"] = load_last_path("etacom")
     export_paths["busway"] = load_last_path("busway")
+    export_paths["uic"] = load_last_path("uic")
     export_paths["yuasa"] = load_last_path("yuasa")
     root = Tk()
     COAApp(root)

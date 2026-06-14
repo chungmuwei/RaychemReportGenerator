@@ -24,6 +24,26 @@ PRODUCT_SPECS = {
             "gel_time_range": "60~100",
         }
     },
+    "uic": {
+        "CY8101R": {
+            "weight": "360KG",
+            "unit_weight": "20KG",
+            "qty": "18桶",
+            "viscosity_range": "10,000~20,000",
+            "appearance": "Red liquid",
+            "hardness": "",
+            "gel_time_range": "",
+        },
+        "HY8101": {
+            "weight": "75KG",
+            "unit_weight": "15KG",
+            "qty": "5桶",
+            "viscosity_range": "15~50",
+            "appearance": "Transparent liquid",
+            "hardness": "",
+            "gel_time_range": "",
+        },
+    },
 }
 
 
@@ -88,6 +108,48 @@ class AppValidationTests(unittest.TestCase):
                 PRODUCT_SPECS,
             )
 
+    def test_build_uic_context_populates_template_fields_without_gel_time(self):
+        context = app.build_type_1_context(
+            "uic",
+            {
+                "product_name": "CY8101R",
+                "date": "20260614",
+                "lot_no": "T260528",
+                "viscosity": "12158",
+            },
+            PRODUCT_SPECS,
+            include_gel_time=False,
+        )
+
+        self.assertEqual(context["product_name"], "CY8101R")
+        self.assertEqual(context["weight"], "360KG")
+        self.assertEqual(context["unit_weight"], "20KG")
+        self.assertEqual(context["qty"], "18桶")
+        self.assertEqual(context["viscosity_range"], "10,000~20,000")
+        self.assertEqual(context["appearance"], "Red liquid")
+        self.assertEqual(context["obs_appearance"], "Red liquid")
+        self.assertEqual(context["viscosity"], 12158)
+        self.assertNotIn("gel_time", context)
+
+    def test_uic_context_renders_uic_template(self):
+        context = app.build_type_1_context(
+            "uic",
+            {
+                "product_name": "HY8101",
+                "date": "20260614",
+                "lot_no": "T260528",
+                "viscosity": "30",
+            },
+            PRODUCT_SPECS,
+            include_gel_time=False,
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = app.generator.generate_coa_report(app.UIC_TEMPLATE_FILE, context, tmpdir)
+
+            self.assertTrue(os.path.exists(output))
+            self.assertTrue(output.endswith(".docx"))
+
     def test_build_yuasa_context_calculates_due_date_and_tensile_diff(self):
         context = app.build_yuasa_context(
             {
@@ -140,6 +202,11 @@ class AppValidationTests(unittest.TestCase):
         self.assertEqual(app.mousewheel_scroll_units(-1), 1)
         self.assertEqual(app.mousewheel_scroll_units(0), 0)
 
+    def test_type_1_viscosity_format_avoids_forced_trailing_zeroes(self):
+        self.assertEqual(app.format_type_1_viscosity(30), "30")
+        self.assertEqual(app.format_type_1_viscosity(950.25), "950.2")
+        self.assertEqual(app.format_type_1_viscosity(12158), 12158)
+
 
 class AppCallbackTests(unittest.TestCase):
     def make_uninitialized_app(self):
@@ -177,7 +244,7 @@ class AppCallbackTests(unittest.TestCase):
             app_obj = self.make_uninitialized_app()
             app_obj.product_specs = PRODUCT_SPECS
             app_obj.ask_output_directory = lambda company, title: tmpdir
-            app_obj.get_type_1_values = lambda company: {
+            app_obj.get_type_1_values = lambda company, include_gel_time=True: {
                 "product_name": "樹脂CY2536L",
                 "date": "20260614",
                 "lot_no": "T260614",
@@ -202,7 +269,7 @@ class AppCallbackTests(unittest.TestCase):
     def test_export_type_1_validation_error_shows_before_directory_dialog(self):
         app_obj = self.make_uninitialized_app()
         app_obj.product_specs = PRODUCT_SPECS
-        app_obj.get_type_1_values = lambda company: {
+        app_obj.get_type_1_values = lambda company, include_gel_time=True: {
             "product_name": "樹脂CY2536L",
             "date": "20260614",
             "lot_no": "",
@@ -220,6 +287,33 @@ class AppCallbackTests(unittest.TestCase):
 
         self.assertEqual(app_obj.dialog.errors, [("錯誤", "批號不可空白。")])
         self.assertEqual(app_obj.dialog.infos, [])
+
+    def test_uic_export_does_not_require_gel_time(self):
+        calls = []
+        with tempfile.TemporaryDirectory() as tmpdir:
+            app_obj = self.make_uninitialized_app()
+            app_obj.product_specs = PRODUCT_SPECS
+            app_obj.ask_output_directory = lambda company, title: tmpdir
+            app_obj.get_type_1_values = lambda company, include_gel_time=True: {
+                "product_name": "HY8101",
+                "date": "20260614",
+                "lot_no": "T260528",
+                "viscosity": "30",
+            }
+
+            def fake_generator(template_file, context, output_path):
+                calls.append((template_file, context, output_path))
+                return os.path.join(output_path, "COA_HY8101_T260528.docx")
+
+            app_obj.report_generator = fake_generator
+
+            app.COAApp.export_type_1_report(app_obj, "uic", "template.docx", include_gel_time=False)
+
+        self.assertEqual(calls[0][1]["product_name"], "HY8101")
+        self.assertEqual(calls[0][1]["unit_weight"], "15KG")
+        self.assertEqual(calls[0][1]["qty"], "5桶")
+        self.assertNotIn("gel_time", calls[0][1])
+        self.assertEqual(app_obj.dialog.infos[0][0], "成功")
 
     def test_yuasa_validation_error_shows_before_directory_dialog(self):
         app_obj = self.make_uninitialized_app()

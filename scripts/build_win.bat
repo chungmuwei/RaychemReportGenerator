@@ -2,7 +2,7 @@
 REM build_win.bat — 在 Windows 上建立 瑞肯COA.exe
 REM
 REM 前置需求：
-REM   1. 安裝 Python 3.10（與 Mac 版相同版本）
+REM   1. 安裝 Python 3.13（與 Mac 版相同版本）
 REM   2. 建立 venv：python -m venv .venv
 REM   3. 安裝依賴：.venv\Scripts\python.exe -m pip install -r requirements.txt
 REM

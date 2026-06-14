@@ -39,13 +39,13 @@
 
 ### 前置需求
 
-- Python 3.10（建議使用 pyenv）
+- Python 3.13（建議使用 pyenv）
 - macOS（本機開發）
 
 ### 建立虛擬環境並安裝依賴
 
 ```bash
-python3.10 -m venv .venv
+python3.13 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```

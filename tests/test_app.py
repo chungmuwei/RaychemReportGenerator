@@ -66,6 +66,22 @@ class DummyDialog:
         self.errors.append((title, message))
 
 
+class FakeVar:
+    def __init__(self, value):
+        self.value = value
+
+    def get(self):
+        return self.value
+
+
+class FakeWidget:
+    def __init__(self):
+        self.config = {}
+
+    def configure(self, **kwargs):
+        self.config.update(kwargs)
+
+
 class AppValidationTests(unittest.TestCase):
     def test_build_type_1_context_formats_and_populates_specs(self):
         context = app.build_type_1_context(
@@ -425,6 +441,46 @@ class AppCallbackTests(unittest.TestCase):
         self.assertEqual(len(app_obj.dialog.errors), 1)
         self.assertIn("湯淺批號格式錯誤", app_obj.dialog.errors[0][1])
         self.assertEqual(app_obj.dialog.infos, [])
+
+
+class AppWidgetStateTests(unittest.TestCase):
+    def make_quantity_state_app(self, product_name):
+        app_obj = object.__new__(app.COAApp)
+        app_obj.labels = {"etacom_quantity": FakeWidget()}
+        app_obj.entries = {"etacom_quantity": FakeWidget()}
+        app_obj.get_listbox_value = lambda key: product_name
+        return app_obj
+
+    def test_etacom_quantity_label_and_entry_disable_for_non_qty_product(self):
+        app_obj = self.make_quantity_state_app("樹脂CY2536L")
+
+        app.COAApp.update_type_1_quantity_state(app_obj, "etacom", app.ETACOM_QTY_PRODUCTS)
+
+        self.assertEqual(app_obj.labels["etacom_quantity"].config["state"], "disabled")
+        self.assertEqual(app_obj.entries["etacom_quantity"].config["state"], "disabled")
+
+    def test_etacom_quantity_label_and_entry_enable_for_hy2537(self):
+        app_obj = self.make_quantity_state_app("硬化劑HY2537")
+
+        app.COAApp.update_type_1_quantity_state(app_obj, "etacom", app.ETACOM_QTY_PRODUCTS)
+
+        self.assertEqual(app_obj.labels["etacom_quantity"].config["state"], "normal")
+        self.assertEqual(app_obj.entries["etacom_quantity"].config["state"], "normal")
+
+    def test_type_1_values_only_collects_qty_for_selected_qty_product(self):
+        app_obj = object.__new__(app.COAApp)
+        app_obj.get_listbox_value = lambda key: "樹脂CY2536L"
+        app_obj.vars = {
+            "etacom_date": FakeVar("2026/06/14"),
+            "etacom_lot_no": FakeVar("T260614"),
+            "etacom_viscosity": FakeVar("950"),
+            "etacom_quantity": FakeVar("3"),
+            "etacom_gel_time": FakeVar("55"),
+        }
+
+        values = app.COAApp.get_type_1_values(app_obj, "etacom", app.ETACOM_QTY_PRODUCTS)
+
+        self.assertNotIn("quantity", values)
 
 
 if __name__ == "__main__":

@@ -73,6 +73,7 @@ class COAApp:
         self.file_dialog = file_dialog
         self.vars: dict[str, tk.StringVar] = {}
         self.listboxes: dict[str, tk.Listbox] = {}
+        self.labels: dict[str, ttk.Label] = {}
         self.entries: dict[str, ttk.Entry] = {}
         self.company_frames: dict[str, ttk.Frame] = {}
         self.company_buttons: dict[str, ttk.Button] = {}
@@ -207,8 +208,7 @@ class COAApp:
     ):
         listbox = self.add_listbox(parent, 0, "品名", f"{company}_product_name", products, default_product, visible_products)
         self.add_entry(parent, 1, "批號", f"{company}_lot_no", "T")
-        self.add_entry(parent, 2, "黏度 cPs", f"{company}_viscosity")
-        next_row = 3
+        next_row = 2
         if qty_products:
             self.add_entry(parent, next_row, "數量", f"{company}_quantity")
             listbox.bind(
@@ -217,6 +217,7 @@ class COAApp:
             )
             self.update_type_1_quantity_state(company, qty_products)
             next_row += 1
+        self.add_entry(parent, next_row, "黏度 cPs", f"{company}_viscosity")
         if include_gel_time:
             self.add_entry(parent, next_row, "凝膠時間 sec", f"{company}_gel_time")
             next_row += 1
@@ -258,11 +259,13 @@ class COAApp:
         ).grid(row=8, column=1, sticky="w", pady=(8, 0))
 
     def add_entry(self, parent, row: int, label: str, key: str, default: str = ""):
-        ttk.Label(parent, text=label).grid(row=row, column=0, sticky="w", padx=(0, 8), pady=2)
+        label_widget = ttk.Label(parent, text=label)
+        label_widget.grid(row=row, column=0, sticky="w", padx=(0, 8), pady=2)
         var = tk.StringVar(value=default)
         entry = ttk.Entry(parent, textvariable=var, width=26)
         entry.grid(row=row, column=1, sticky="w", pady=2)
         self.vars[key] = var
+        self.labels[key] = label_widget
         self.entries[key] = entry
         return entry
 
@@ -295,20 +298,24 @@ class COAApp:
         return self.listboxes[key].get(selection[0])
 
     def update_type_1_quantity_state(self, company: str, qty_products: set[str]):
+        key = f"{company}_quantity"
+        label = self.labels.get(key)
         entry = self.entries.get(f"{company}_quantity")
-        if entry is None:
+        if label is None or entry is None:
             return
         state = "normal" if self.get_listbox_value(f"{company}_product_name") in qty_products else "disabled"
+        label.configure(state=state)
         entry.configure(state=state)
 
     def get_type_1_values(self, company: str, qty_products: set[str] | None = None, include_gel_time: bool = True) -> dict:
+        product_name = self.get_listbox_value(f"{company}_product_name")
         values = {
-            "product_name": self.get_listbox_value(f"{company}_product_name"),
+            "product_name": product_name,
             "date": self.vars[f"{company}_date"].get(),
             "lot_no": self.vars[f"{company}_lot_no"].get(),
             "viscosity": self.vars[f"{company}_viscosity"].get(),
         }
-        if qty_products:
+        if type_1_uses_user_quantity(product_name, qty_products):
             values["quantity"] = self.vars[f"{company}_quantity"].get()
         if include_gel_time:
             values["gel_time"] = self.vars[f"{company}_gel_time"].get()

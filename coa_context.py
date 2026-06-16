@@ -68,8 +68,14 @@ def build_type_1_context(
         context["gel_time"] = format_numeric_text(gel_time)
     if uses_user_quantity:
         context["qty"] = format_numeric_text(qty)
-    if uses_user_quantity and company == "etacom" and product_name == "硬化劑HY2537":
-        context["weight"] = format_numeric_text(format_hy2537_base_weight(spec["weight"]))
+    # if uses_user_quantity and company == "etacom" and product_name == "硬化劑HY2537":
+    #     context["weight"] = format_numeric_text(format_hy2537_base_weight(spec["weight"]))
+    
+    # Only recalculate weight for UIC company
+    # Currently, only UIC products have unit_weight and qty in the specs
+    if company  == "uic":
+        context["weight"] = format_numeric_text(int(context["unit_weight"]) * int(context["qty"]))
+
     return context
 
 

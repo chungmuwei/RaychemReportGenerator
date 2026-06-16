@@ -218,6 +218,7 @@ class COAApp:
             self.update_type_1_quantity_state(company, qty_products)
             next_row += 1
         self.add_entry(parent, next_row, "黏度 cPs", f"{company}_viscosity")
+        next_row += 1
         if include_gel_time:
             self.add_entry(parent, next_row, "凝膠時間 sec", f"{company}_gel_time")
             next_row += 1

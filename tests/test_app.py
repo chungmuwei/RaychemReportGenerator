@@ -13,6 +13,13 @@ PRODUCT_SPECS = {
             "appearance": "淡黃色透明液體",
             "hardness": ">70",
             "gel_time_range": "40~80",
+        },
+        "硬化劑HY2537": {
+            "weight": "180KG*1桶",
+            "viscosity_range": "20~50",
+            "appearance": "透明無雜質液體",
+            "hardness": ">70",
+            "gel_time_range": "40~80",
         }
     },
     "busway": {
@@ -145,6 +152,57 @@ class AppValidationTests(unittest.TestCase):
         self.assertEqual(context["viscosity"], "12,158")
         self.assertNotIn("gel_time", context)
 
+    def test_build_uic_context_uses_entered_qty_when_enabled(self):
+        context = app.build_type_1_context(
+            "uic",
+            {
+                "product_name": "CY8101R",
+                "date": "2026/06/14",
+                "lot_no": "T260528",
+                "viscosity": "12158",
+                "quantity": "21",
+            },
+            PRODUCT_SPECS,
+            app.UIC_QTY_PRODUCTS,
+            include_gel_time=False,
+        )
+
+        self.assertEqual(context["qty"], "21")
+
+    def test_build_etacom_hy2537_context_uses_entered_qty(self):
+        context = app.build_type_1_context(
+            "etacom",
+            {
+                "product_name": "硬化劑HY2537",
+                "date": "2026/06/14",
+                "lot_no": "T260614",
+                "viscosity": "30",
+                "quantity": "3",
+                "gel_time": "55",
+            },
+            PRODUCT_SPECS,
+            app.ETACOM_QTY_PRODUCTS,
+        )
+
+        self.assertEqual(context["weight"], "180KG")
+        self.assertEqual(context["qty"], "3")
+
+    def test_build_etacom_hy2537_context_requires_qty_when_enabled(self):
+        with self.assertRaisesRegex(app.UserInputError, "數量不可空白"):
+            app.build_type_1_context(
+                "etacom",
+                {
+                    "product_name": "硬化劑HY2537",
+                    "date": "2026/06/14",
+                    "lot_no": "T260614",
+                    "viscosity": "30",
+                    "quantity": "",
+                    "gel_time": "55",
+                },
+                PRODUCT_SPECS,
+                app.ETACOM_QTY_PRODUCTS,
+            )
+
     def test_uic_context_renders_uic_template(self):
         context = app.build_type_1_context(
             "uic",
@@ -266,7 +324,7 @@ class AppCallbackTests(unittest.TestCase):
             app_obj = self.make_uninitialized_app()
             app_obj.product_specs = PRODUCT_SPECS
             app_obj.ask_output_directory = lambda company, title: tmpdir
-            app_obj.get_type_1_values = lambda company, include_gel_time=True: {
+            app_obj.get_type_1_values = lambda company, qty_products=None, include_gel_time=True: {
                 "product_name": "樹脂CY2536L",
                 "date": "2026/06/14",
                 "lot_no": "T260614",
@@ -291,7 +349,7 @@ class AppCallbackTests(unittest.TestCase):
     def test_export_type_1_validation_error_shows_before_directory_dialog(self):
         app_obj = self.make_uninitialized_app()
         app_obj.product_specs = PRODUCT_SPECS
-        app_obj.get_type_1_values = lambda company, include_gel_time=True: {
+        app_obj.get_type_1_values = lambda company, qty_products=None, include_gel_time=True: {
             "product_name": "樹脂CY2536L",
             "date": "2026/06/14",
             "lot_no": "",
@@ -316,11 +374,12 @@ class AppCallbackTests(unittest.TestCase):
             app_obj = self.make_uninitialized_app()
             app_obj.product_specs = PRODUCT_SPECS
             app_obj.ask_output_directory = lambda company, title: tmpdir
-            app_obj.get_type_1_values = lambda company, include_gel_time=True: {
+            app_obj.get_type_1_values = lambda company, qty_products=None, include_gel_time=True: {
                 "product_name": "HY8101",
                 "date": "2026/06/14",
                 "lot_no": "T260528",
                 "viscosity": "30",
+                "quantity": "9",
             }
 
             def fake_generator(template_file, context, output_path):
@@ -329,11 +388,11 @@ class AppCallbackTests(unittest.TestCase):
 
             app_obj.report_generator = fake_generator
 
-            app.COAApp.export_type_1_report(app_obj, "uic", "template.docx", include_gel_time=False)
+            app.COAApp.export_type_1_report(app_obj, "uic", "template.docx", app.UIC_QTY_PRODUCTS, include_gel_time=False)
 
         self.assertEqual(calls[0][1]["product_name"], "HY8101")
         self.assertEqual(calls[0][1]["unit_weight"], "15KG")
-        self.assertEqual(calls[0][1]["qty"], "5桶")
+        self.assertEqual(calls[0][1]["qty"], "9")
         self.assertNotIn("gel_time", calls[0][1])
         self.assertEqual(app_obj.dialog.infos[0][0], "成功")
 

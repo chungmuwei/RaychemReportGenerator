@@ -8,6 +8,7 @@ a = Analysis(
     datas=[
         ('templates', 'templates'),
         ('fonts', 'fonts'),
+        ('config.ini', '.'),
         ('product_specs.json', '.'),
     ],
     hiddenimports=[],

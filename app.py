@@ -1,262 +1,31 @@
 from __future__ import annotations
 
-import json
 import os
-import re
 import time
 import traceback
-from datetime import date, datetime
 from tkinter import Tk, filedialog, messagebox, ttk
 import tkinter as tk
 from tkinter import font as tkfont
 
-from dateutil.relativedelta import relativedelta
-
 import generator
-
-DEBUG = False
-
-# ETACOM_TEMPLATE_FILE = generator.resource_path("templates/COA_Etacom_template.docx")
-ETACOM_TEMPLATE_FILE = generator.resource_path("templates/COA_Etacom_template_font_revision.docx")  # 新細明體
-BUSWAY_TEMPLATE_FILE = generator.resource_path("templates/COA_Busway_template.docx")
-YUASA_TEMPLATE_FILE = generator.resource_path("templates/COA_Yuasa_template.docx")
-UIC_TEMPLATE_FILE = generator.resource_path("templates/COA_UIC_template.docx")
-ETACOM_PRODUCT_NAME = ["樹脂CY2536L", "樹脂CY2536", "硬化劑HY2536", "硬化劑HY2537"]
-BUSWAY_PRODUCT_NAME = ["CY2533L7", "HY2533"]
-UIC_PRODUCT_NAME = ["CY8101R", "HY8101"]
-COUPLE = {
-    "樹脂CY2536L": "HY2536",
-    "樹脂CY2536": "HY2536",
-    "硬化劑HY2536": "CY2536L",
-    "硬化劑HY2537": "CY2536L",
-    "CY2533L7": "HY2533",
-    "HY2533": "CY2533L7",
-    "CY8101R": "HY8101",
-    "HY8101": "CY8101R",
-}
-
-# PATHS
-APP_SUPPORT_DIR = os.path.join(
-    os.path.expanduser("~"),
-    "Library",
-    "Application Support",
-    "com.raychemcoa",
+from coa_config import (
+    BUSWAY_PRODUCT_NAME,
+    BUSWAY_TEMPLATE_FILE,
+    DEBUG,
+    ETACOM_PRODUCT_NAME,
+    ETACOM_QTY_PRODUCTS,
+    ETACOM_TEMPLATE_FILE,
+    UIC_PRODUCT_NAME,
+    UIC_QTY_PRODUCTS,
+    UIC_TEMPLATE_FILE,
+    YUASA_TEMPLATE_FILE,
+    export_paths,
+    load_export_paths,
+    load_product_specs,
+    save_all_paths,
 )
-CONFIG_FILE = os.path.join(APP_SUPPORT_DIR, "export_config.json")
-PRODUCT_SPECS_FILE = generator.resource_path("product_specs.json")
-DEFAULT_EXPORT_PATH = os.path.expanduser("~")
-export_paths = {
-    "etacom": DEFAULT_EXPORT_PATH,
-    "busway": DEFAULT_EXPORT_PATH,
-    "uic": DEFAULT_EXPORT_PATH,
-    "yuasa": DEFAULT_EXPORT_PATH,
-}
-
-
-class UserInputError(ValueError):
-    """Raised when user-entered GUI values cannot be used to generate a report."""
-
-
-def create_export_config_file():
-    """Create config file at APP_SUPPORT_DIR/CONFIG_FILE to store export paths if it doesn't exist."""
-    if DEBUG:
-        print(f"Creating export config file at {CONFIG_FILE} with default paths: {export_paths}")
-    os.makedirs(APP_SUPPORT_DIR, exist_ok=True)
-    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-        json.dump(obj=export_paths, fp=f, ensure_ascii=False)
-
-
-def load_last_path(company: str):
-    """Read last export path for a specific company from config file."""
-    if not os.path.exists(CONFIG_FILE):
-        create_export_config_file()
-
-    try:
-        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            saved_path = data.get(f"{company}_export_path", DEFAULT_EXPORT_PATH)
-            if saved_path and os.path.isdir(saved_path):
-                return saved_path
-    except Exception:
-        return DEFAULT_EXPORT_PATH
-    return DEFAULT_EXPORT_PATH
-
-
-def save_all_paths(paths: dict):
-    """Save export paths for all companies to config file."""
-    if not os.path.exists(CONFIG_FILE):
-        create_export_config_file()
-
-    data = {}
-    if os.path.exists(CONFIG_FILE):
-        try:
-            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-        except Exception:
-            pass
-    for company, path in paths.items():
-        if path and os.path.isdir(path):
-            data[f"{company}_export_path"] = path
-    try:
-        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False)
-        if DEBUG:
-            print(f"Saved export config paths: {paths}")
-    except Exception as e:
-        if DEBUG:
-            print(f"Failed to save export config paths: {str(e)}")
-
-
-def load_product_specs(path: str = PRODUCT_SPECS_FILE) -> dict:
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def require_text(value: object, label: str) -> str:
-    text = "" if value is None else str(value).strip()
-    if not text:
-        raise UserInputError(f"{label}不可空白。")
-    return text
-
-
-def parse_positive_float(value: object, label: str) -> float:
-    text = require_text(value, label)
-    try:
-        parsed = float(text)
-    except ValueError as exc:
-        raise UserInputError(f"{label}必須是數字。") from exc
-    if parsed <= 0:
-        raise UserInputError(f"{label}必須大於 0。")
-    return parsed
-
-
-def parse_positive_int(value: object, label: str) -> int:
-    text = require_text(value, label)
-    try:
-        parsed = int(text)
-    except ValueError as exc:
-        raise UserInputError(f"{label}必須是整數。") from exc
-    if parsed <= 0:
-        raise UserInputError(f"{label}必須大於 0。")
-    return parsed
-
-
-def validate_report_date(value: object, label: str = "檢測日期") -> str:
-    text = require_text(value, label)
-    if not re.fullmatch(r"\d{4}/\d{2}/\d{2}", text):
-        raise UserInputError(f"{label}格式必須為 YYYY/MM/DD。")
-    try:
-        datetime.strptime(text, "%Y/%m/%d")
-    except ValueError as exc:
-        raise UserInputError(f"{label}不是有效日期。") from exc
-    return text
-
-
-def format_numeric_text(value: object) -> str:
-    text = str(value)
-
-    def format_match(match: re.Match) -> str:
-        raw_number = match.group(0)
-        normalized = raw_number.replace(",", "")
-        if "." in normalized:
-            whole, decimal = normalized.split(".", 1)
-            return f"{int(whole):,}.{decimal}"
-        return f"{int(normalized):,}"
-
-    return re.sub(r"\d[\d,]*(?:\.\d+)?", format_match, text)
-
-
-def format_type_1_viscosity(viscosity: float) -> str:
-    formatted = f"{viscosity:.4g}" if viscosity < 1000 else str(round(viscosity))
-    return format_numeric_text(formatted)
-
-
-def mousewheel_scroll_units(delta: int) -> int:
-    if delta == 0:
-        return 0
-    if abs(delta) >= 120:
-        return int(-delta / 120)
-    return -1 if delta > 0 else 1
-
-
-def build_type_1_context(company: str, values: dict, product_specs: dict, include_gel_time: bool = True) -> dict:
-    product_name = require_text(values.get("product_name"), "品名")
-    if company not in product_specs:
-        raise UserInputError(f"找不到 {company} 的產品規格。")
-    if product_name not in product_specs[company]:
-        raise UserInputError(f"找不到品名 {product_name} 的產品規格。")
-    if product_name not in COUPLE:
-        raise UserInputError(f"找不到品名 {product_name} 的搭配產品。")
-
-    test_date = validate_report_date(values.get("date"))
-    lot_no = require_text(values.get("lot_no"), "批號")
-    viscosity = parse_positive_float(values.get("viscosity"), "黏度 cPs")
-    gel_time = parse_positive_int(values.get("gel_time"), "凝膠時間 sec") if include_gel_time else None
-    spec = product_specs[company][product_name]
-
-    context = {
-        "product_name": product_name,
-        "date": test_date,
-        "lot_no": lot_no,
-        "weight": format_numeric_text(spec["weight"]),
-        "unit_weight": format_numeric_text(spec.get("unit_weight", "")),
-        "qty": format_numeric_text(spec.get("qty", "")),
-        "viscosity_range": format_numeric_text(spec["viscosity_range"]),
-        "appearance": spec["appearance"],
-        "obs_appearance": spec["appearance"],
-        "couple": COUPLE[product_name],
-        "hardness": format_numeric_text(spec["hardness"]),
-        "gel_time_range": format_numeric_text(spec["gel_time_range"]),
-        "viscosity": format_type_1_viscosity(viscosity),
-    }
-    if include_gel_time:
-        context["gel_time"] = format_numeric_text(gel_time)
-    return context
-
-
-def build_yuasa_context(values: dict) -> dict:
-    test_date = validate_report_date(values.get("date"))
-    lot_no = require_text(values.get("lot_no"), "批號")
-    if not re.fullmatch(r"[A-Za-z]\d{6}.*", lot_no):
-        raise UserInputError("湯淺批號格式錯誤，前 7 碼需為 1 個英文字母加 6 個日期數字，例如 T260101。")
-
-    try:
-        year = 2000 + int(lot_no[1:3])
-        month = int(lot_no[3:5])
-        day = int(lot_no[5:7])
-        due_date = date(year, month, day) + relativedelta(months=+6)
-    except ValueError as exc:
-        raise UserInputError("湯淺批號內的日期不是有效日期。") from exc
-
-    before_tensile_strength = parse_positive_int(values.get("before_tensile_strength"), "浸酸前引張強度 Kgf/cm2")
-    after_tensile_strength = parse_positive_int(values.get("after_tensile_strength"), "浸酸後引張強度 Kgf/cm2")
-    tensile_strength_diff = round(
-        (100 * (before_tensile_strength - after_tensile_strength) / before_tensile_strength),
-        2,
-    )
-
-    return {
-        "product_name": "AY8000RB",
-        "date": test_date,
-        "lot_no": lot_no,
-        "ay8000r_quant": format_numeric_text(parse_positive_int(values.get("ay8000r_quantity"), "AY8000R數量")),
-        "ay8000b_quant": format_numeric_text(parse_positive_int(values.get("ay8000b_quantity"), "AY8000B數量")),
-        "hy8000_quant": format_numeric_text(parse_positive_int(values.get("hy8000_quantity"), "HY8000數量")),
-        "due_date": time.strftime("%Y/%m/%d", due_date.timetuple()),
-        "ay8000r_viscosity": format_numeric_text(parse_positive_int(values.get("ay8000r_viscosity"), "AY8000R 黏度 cPs")),
-        "ay8000b_viscosity": format_numeric_text(parse_positive_int(values.get("ay8000b_viscosity"), "AY8000B 黏度 cPs")),
-        "hy8000_viscosity": format_numeric_text(
-            "{:.1f}".format(parse_positive_float(values.get("hy8000_viscosity"), "HY8000 黏度 cPs"))
-        ),
-        "ay8000r_gel_time": format_numeric_text(parse_positive_int(values.get("ay8000r_gel_time"), "AY8000R 凝膠時間 sec")),
-        "ay8000b_gel_time": format_numeric_text(parse_positive_int(values.get("ay8000b_gel_time"), "AY8000B 凝膠時間 sec")),
-        "before_tensile_strength": format_numeric_text(before_tensile_strength),
-        "after_tensile_strength": format_numeric_text(after_tensile_strength),
-        "tensile_strength_diff": format_numeric_text(tensile_strength_diff),
-        "acid_resistance": format_numeric_text(
-            "{:.2f}".format(parse_positive_float(values.get("acid_resistance"), "耐酸性 %"))
-        ),
-    }
+from coa_context import build_type_1_context, build_yuasa_context, type_1_uses_user_quantity
+from coa_utils import UserInputError, format_numeric_text, format_type_1_viscosity, mousewheel_scroll_units
 
 
 class ScrollableFrame(ttk.Frame):
@@ -304,6 +73,7 @@ class COAApp:
         self.file_dialog = file_dialog
         self.vars: dict[str, tk.StringVar] = {}
         self.listboxes: dict[str, tk.Listbox] = {}
+        self.entries: dict[str, ttk.Entry] = {}
         self.company_frames: dict[str, ttk.Frame] = {}
         self.company_buttons: dict[str, ttk.Button] = {}
         self.active_company: str | None = None
@@ -350,8 +120,9 @@ class COAApp:
             company="etacom",
             products=ETACOM_PRODUCT_NAME,
             default_product="樹脂CY2536L",
-            visible_products=3,
+            visible_products=4,
             template=ETACOM_TEMPLATE_FILE,
+            qty_products=ETACOM_QTY_PRODUCTS,
         )
 
         busway = self.add_company_tab("busway", "巴斯威爾", 1)
@@ -372,6 +143,7 @@ class COAApp:
             default_product="CY8101R",
             visible_products=2,
             template=UIC_TEMPLATE_FILE,
+            qty_products=UIC_QTY_PRODUCTS,
             include_gel_time=False,
         )
 
@@ -430,12 +202,21 @@ class COAApp:
         default_product: str,
         visible_products: int,
         template: str,
+        qty_products: set[str] | None = None,
         include_gel_time: bool = True,
     ):
-        self.add_listbox(parent, 0, "品名", f"{company}_product_name", products, default_product, visible_products)
+        listbox = self.add_listbox(parent, 0, "品名", f"{company}_product_name", products, default_product, visible_products)
         self.add_entry(parent, 1, "批號", f"{company}_lot_no", "T")
         self.add_entry(parent, 2, "黏度 cPs", f"{company}_viscosity")
         next_row = 3
+        if qty_products:
+            self.add_entry(parent, next_row, "數量", f"{company}_quantity")
+            listbox.bind(
+                "<<ListboxSelect>>",
+                lambda _event, c=company, qp=qty_products: self.update_type_1_quantity_state(c, qp),
+            )
+            self.update_type_1_quantity_state(company, qty_products)
+            next_row += 1
         if include_gel_time:
             self.add_entry(parent, next_row, "凝膠時間 sec", f"{company}_gel_time")
             next_row += 1
@@ -443,7 +224,7 @@ class COAApp:
         ttk.Button(
             parent,
             text="輸出報告",
-            command=self.safe_callback(lambda: self.export_type_1_report(company, template, include_gel_time)),
+            command=self.safe_callback(lambda: self.export_type_1_report(company, template, qty_products, include_gel_time)),
         ).grid(row=next_row + 1, column=1, sticky="w", pady=(8, 0))
 
     def build_yuasa_section(self, parent):
@@ -482,6 +263,7 @@ class COAApp:
         entry = ttk.Entry(parent, textvariable=var, width=26)
         entry.grid(row=row, column=1, sticky="w", pady=2)
         self.vars[key] = var
+        self.entries[key] = entry
         return entry
 
     def add_listbox(
@@ -512,13 +294,22 @@ class COAApp:
             return ""
         return self.listboxes[key].get(selection[0])
 
-    def get_type_1_values(self, company: str, include_gel_time: bool = True) -> dict:
+    def update_type_1_quantity_state(self, company: str, qty_products: set[str]):
+        entry = self.entries.get(f"{company}_quantity")
+        if entry is None:
+            return
+        state = "normal" if self.get_listbox_value(f"{company}_product_name") in qty_products else "disabled"
+        entry.configure(state=state)
+
+    def get_type_1_values(self, company: str, qty_products: set[str] | None = None, include_gel_time: bool = True) -> dict:
         values = {
             "product_name": self.get_listbox_value(f"{company}_product_name"),
             "date": self.vars[f"{company}_date"].get(),
             "lot_no": self.vars[f"{company}_lot_no"].get(),
             "viscosity": self.vars[f"{company}_viscosity"].get(),
         }
+        if qty_products:
+            values["quantity"] = self.vars[f"{company}_quantity"].get()
         if include_gel_time:
             values["gel_time"] = self.vars[f"{company}_gel_time"].get()
         return values
@@ -552,11 +343,12 @@ class COAApp:
         save_all_paths(export_paths)
         return output_dir
 
-    def export_type_1_report(self, company: str, template: str, include_gel_time: bool = True):
+    def export_type_1_report(self, company: str, template: str, qty_products: set[str] | None = None, include_gel_time: bool = True):
         context = build_type_1_context(
             company,
-            self.get_type_1_values(company, include_gel_time),
+            self.get_type_1_values(company, qty_products, include_gel_time),
             self.product_specs,
+            qty_products,
             include_gel_time,
         )
         output_dir = self.ask_output_directory(company, "選擇報告輸出資料夾")
@@ -615,10 +407,7 @@ class COAApp:
 
 
 def run():
-    export_paths["etacom"] = load_last_path("etacom")
-    export_paths["busway"] = load_last_path("busway")
-    export_paths["uic"] = load_last_path("uic")
-    export_paths["yuasa"] = load_last_path("yuasa")
+    load_export_paths()
     root = Tk()
     COAApp(root)
     root.mainloop()

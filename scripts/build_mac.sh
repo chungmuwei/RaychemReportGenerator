@@ -20,7 +20,7 @@ VENV_PYTHON=".venv/bin/python"
 DIST_DIR="dist"
 PYINSTALLER_CONFIG_DIR="${PROJECT_ROOT}/.pyinstaller"
 
-# 版本：優先用環境變數（GitHub Actions 會傳入），否則從 git tag 自動取得
+# 版本：優先用環境變數，否則從 git tag 自動取得
 APP_VERSION="${APP_VERSION:-$(git describe --tags --abbrev=0 2>/dev/null || echo 'dev')}"
 DMG_OUTPUT="release/${APP_NAME}_${APP_VERSION}_Installer.dmg"
 

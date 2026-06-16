@@ -13,16 +13,11 @@
 ├── requirements.txt
 ├── Makefile                  # 建置指令
 ├── RaychemReport.spec        # PyInstaller macOS 設定
-├── RaychemCOA_windows.spec   # PyInstaller Windows 設定
 ├── templates/                # COA Word 模板
 ├── fonts/                    # Noto Sans TC 字型
-├── icons/                    # 應用程式圖示（.icns / .ico / .svg）
+├── icons/                    # 應用程式圖示（.icns / .svg）
 ├── scripts/
-│   ├── build_mac.sh          # macOS 建置腳本
-│   ├── build_win.bat         # Windows 建置腳本
-│   └── convert_icon.py       # 圖示轉換工具（.icns → .ico）
-└── .github/workflows/
-    └── build.yml             # GitHub Actions 自動建置
+│   └── build_mac.sh          # macOS 建置腳本
 ```
 
 ---
@@ -75,7 +70,7 @@ python -m unittest discover -v
 | [python-docx](https://python-docx.readthedocs.io/) | 1.2.0 | Word 文件操作 |
 | [docxcompose](https://github.com/4teamwork/docxcompose) | 2.2.0 | 合併 Word 文件 |
 | [python-dateutil](https://dateutil.readthedocs.io/) | 2.9.0 | 日期計算（有效期限推算）|
-| [PyInstaller](https://pyinstaller.org/) | 6.21.0 | 打包成獨立執行檔（.app / .exe）|
+| [PyInstaller](https://pyinstaller.org/) | 6.21.0 | 打包成 macOS .app |
 | Jinja2 | 3.1.6 | 模板引擎（docxtpl 依賴）|
 | lxml | 6.1.1 | XML 解析（python-docx 依賴）|
 
@@ -83,12 +78,9 @@ python -m unittest discover -v
 
 | 工具 | 用途 |
 |---|---|
-| [PyInstaller](https://pyinstaller.org/) | 打包成獨立執行檔（.app / .exe）|
+| [PyInstaller](https://pyinstaller.org/) | 打包成 macOS .app |
 | [create-dmg](https://github.com/create-dmg/create-dmg) | 建立 macOS DMG 安裝檔 |
-| [GitHub Actions](https://docs.github.com/actions) | CI/CD 自動建置與發佈 |
 | Make | 本機建置指令管理 |
-| sips（macOS 內建）| 圖示格式轉換（.icns → PNG）|
-| Pillow | 圖示尺寸調整並輸出 .ico |
 
 ---
 
@@ -114,18 +106,6 @@ make build
 - `dist/瑞肯COA.app`
 - `release/瑞肯COA_<版本>_Installer.dmg`
 
-### Windows（.exe）
-
-在 Windows 機器上執行：
-
-```bat
-scripts\build_win.bat
-```
-
-產出：`dist\瑞肯COA.exe`
-
----
-
 ## 版本管理與發佈
 
 本專案使用[語意化版本](https://semver.org/lang/zh-TW/)（例如 `v1.0.0`）。
@@ -142,11 +122,9 @@ make tag VERSION_ARG=v1.0.0
 這個指令會：
 1. 在當前 commit 建立 git tag
 2. 將 tag push 到 GitHub
-3. 自動觸發 GitHub Actions 執行 macOS / Windows 測試
-4. 測試通過後建置 macOS DMG 與 Windows ZIP
-5. 在 GitHub Releases 頁面發佈可下載的安裝檔
+3. 之後可執行 `make build` 在本機建立 macOS DMG
 
-> Release tag 必須指向已合併到 `main` 的 commit；GitHub Actions 會檢查 tag commit 是否包含在 `origin/main` 中。
+> Release tag 必須指向已合併到 `main` 的 commit；`make tag` 會檢查本機 `main` 是否與 `origin/main` 同步。
 
 ### 版本號規則
 
@@ -157,29 +135,13 @@ make tag VERSION_ARG=v1.0.0
 | `v1.1.1` | Bug 修正 |
 | `v1.2.0-beta` | 預覽版（自動標為 prerelease）|
 
-### 手動觸發建置
-
-在 GitHub → Actions → **Release 瑞肯COA** → **Run workflow**，可輸入版本號並選擇是否發佈 Release。
-
-### GitHub Actions CI/CD
-
-`.github/workflows/build.yml` 會在推送 `v*` tag 時自動執行：
-
-1. 驗證版本號格式與 tag commit 是否在 `main`
-2. 在 macOS 與 Windows runner 上安裝依賴並執行測試
-3. 建置 `release/*.dmg`
-4. 建置 `release/*.zip`（Windows app 資料夾）
-5. 建立 GitHub Release 並上傳兩個平台的安裝檔
-
----
-
 ## Makefile 指令
 
 | 指令 | 說明 |
 |---|---|
 | `make` 或 `make build` | 本機建置 macOS .app + DMG |
 | `make clean` | 清除 build/、dist/、release/ |
-| `make tag VERSION_ARG=vX.Y.Z` | 打版本 tag 並推送，觸發 CI |
+| `make tag VERSION_ARG=vX.Y.Z` | 打版本 tag 並推送 |
 
 ## TODO
 

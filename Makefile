@@ -6,7 +6,7 @@ VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null || echo "dev")
 build:
 	./scripts/build_mac.sh
 
-# 打版本 tag 並 push → 自動觸發 GitHub Actions build
+# 打版本 tag 並 push
 # 用法：make tag VERSION=v1.0.0
 tag:
 	@if [ "$(VERSION_ARG)" = "" ]; then \
@@ -36,13 +36,12 @@ tag:
 	fi
 	@if git ls-remote --exit-code --tags origin "refs/tags/$(VERSION_ARG)" >/dev/null 2>&1; then \
 		echo "錯誤：遠端 tag $(VERSION_ARG) 已存在於 origin。"; \
-		echo "如果只是先前 GitHub Actions 失敗，請到 GitHub Actions 重新執行該 tag 的 workflow。"; \
 		echo "若要重新建立同一個 tag，請先刪除本機與遠端舊 tag。"; \
 		exit 1; \
 	fi
 	git tag -a $(VERSION_ARG) -m "Release $(VERSION_ARG)"
 	git push origin $(VERSION_ARG)
-	@echo "✓ 已推送 tag $(VERSION_ARG)，GitHub Actions 正在建立 release..."
+	@echo "✓ 已推送 tag $(VERSION_ARG)。請執行 make build 建立 macOS DMG。"
 
 clean:
 	rm -rf build/ dist/ release/

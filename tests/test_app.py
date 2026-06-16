@@ -15,7 +15,7 @@ PRODUCT_SPECS = {
             "gel_time_range": "40~80",
         },
         "硬化劑HY2537": {
-            "weight": "180KG*1桶",
+            "weight": "180KG",
             "viscosity_range": "20~50",
             "appearance": "透明無雜質液體",
             "hardness": ">70",
@@ -33,18 +33,18 @@ PRODUCT_SPECS = {
     },
     "uic": {
         "CY8101R": {
-            "weight": "360KG",
-            "unit_weight": "20KG",
-            "qty": "18桶",
+            "weight": "360",
+            "unit_weight": "20",
+            "quantity": "18",
             "viscosity_range": "10,000~20,000",
             "appearance": "Red liquid",
             "hardness": "",
             "gel_time_range": "",
         },
         "HY8101": {
-            "weight": "75KG",
-            "unit_weight": "15KG",
-            "qty": "5桶",
+            "weight": "75",
+            "unit_weight": "15",
+            "quantity": "5",
             "viscosity_range": "15~50",
             "appearance": "Transparent liquid",
             "hardness": "",
@@ -152,16 +152,18 @@ class AppValidationTests(unittest.TestCase):
                 "product_name": "CY8101R",
                 "date": "2026/06/14",
                 "lot_no": "T260528",
+                "quantity": "24",
                 "viscosity": "12158",
             },
             PRODUCT_SPECS,
+            app.UIC_QTY_PRODUCTS,
             include_gel_time=False,
         )
 
         self.assertEqual(context["product_name"], "CY8101R")
-        self.assertEqual(context["weight"], "360KG")
-        self.assertEqual(context["unit_weight"], "20KG")
-        self.assertEqual(context["qty"], "18桶")
+        self.assertEqual(context["weight"], "480")
+        self.assertEqual(context["unit_weight"], "20")
+        self.assertEqual(context["qty"], "24")
         self.assertEqual(context["viscosity_range"], "10,000~20,000")
         self.assertEqual(context["appearance"], "Red liquid")
         self.assertEqual(context["obs_appearance"], "Red liquid")
@@ -226,9 +228,11 @@ class AppValidationTests(unittest.TestCase):
                 "product_name": "HY8101",
                 "date": "2026/06/14",
                 "lot_no": "T260528",
+                "quantity": "9",
                 "viscosity": "30",
             },
             PRODUCT_SPECS,
+            qty_products=app.UIC_QTY_PRODUCTS,
             include_gel_time=False,
         )
 
@@ -407,7 +411,7 @@ class AppCallbackTests(unittest.TestCase):
             app.COAApp.export_type_1_report(app_obj, "uic", "template.docx", app.UIC_QTY_PRODUCTS, include_gel_time=False)
 
         self.assertEqual(calls[0][1]["product_name"], "HY8101")
-        self.assertEqual(calls[0][1]["unit_weight"], "15KG")
+        self.assertEqual(calls[0][1]["unit_weight"], "15")
         self.assertEqual(calls[0][1]["qty"], "9")
         self.assertNotIn("gel_time", calls[0][1])
         self.assertEqual(app_obj.dialog.infos[0][0], "成功")

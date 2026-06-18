@@ -247,13 +247,13 @@ class AppValidationTests(unittest.TestCase):
             {
                 "date": "2026/06/14",
                 "lot_no": "T260101",
-                "ay8000r_quantity": "1200",
+                "ay8000r_weight": "200",
                 "ay8000r_viscosity": "1258",
                 "ay8000r_gel_time": "60",
-                "ay8000b_quantity": "2",
+                "ay8000b_weight": "200",
                 "ay8000b_viscosity": "130",
                 "ay8000b_gel_time": "70",
-                "hy8000_quantity": "3",
+                "hy8000_weight": "100",
                 "hy8000_viscosity": "88.5",
                 "before_tensile_strength": "100",
                 "after_tensile_strength": "92",
@@ -264,7 +264,7 @@ class AppValidationTests(unittest.TestCase):
         self.assertEqual(context["product_name"], "AY8000RB")
         self.assertEqual(context["date"], "2026/06/14")
         self.assertEqual(context["due_date"], "2026/07/01")
-        self.assertEqual(context["ay8000r_quant"], "1,200")
+        self.assertEqual(context["ay8000r_quant"], "50")
         self.assertEqual(context["ay8000r_viscosity"], "1,258")
         self.assertEqual(context["hy8000_viscosity"], "88.5")
         self.assertEqual(context["tensile_strength_diff"], "8.0")
@@ -276,13 +276,13 @@ class AppValidationTests(unittest.TestCase):
                 {
                     "date": "2026/06/14",
                     "lot_no": "T26",
-                    "ay8000r_quantity": "1",
+                    "ay8000r_weight": "100",
                     "ay8000r_viscosity": "120",
                     "ay8000r_gel_time": "60",
-                    "ay8000b_quantity": "2",
+                    "ay8000b_weight": "200",
                     "ay8000b_viscosity": "130",
                     "ay8000b_gel_time": "70",
-                    "hy8000_quantity": "3",
+                    "hy8000_weight": "100",
                     "hy8000_viscosity": "88.5",
                     "before_tensile_strength": "100",
                     "after_tensile_strength": "92",

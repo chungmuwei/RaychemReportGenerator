@@ -234,19 +234,19 @@ class COAApp:
 
         ay8000r = ttk.LabelFrame(parent, text="AY8000R", padding=(8, 6))
         ay8000r.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(6, 2))
-        self.add_entry(ay8000r, 0, "AY8000R數量", "ay8000r_quantity")
+        self.add_entry(ay8000r, 0, "AY8000R重量 Kg", "ay8000r_weight")
         self.add_entry(ay8000r, 1, "黏度 cPs", "ay8000r_viscosity")
         self.add_entry(ay8000r, 2, "凝膠時間 sec", "ay8000r_gel_time")
 
         ay8000b = ttk.LabelFrame(parent, text="AY8000B", padding=(8, 6))
         ay8000b.grid(row=2, column=0, columnspan=2, sticky="ew", pady=2)
-        self.add_entry(ay8000b, 0, "AY8000B數量", "ay8000b_quantity")
+        self.add_entry(ay8000b, 0, "AY8000B重量 Kg", "ay8000b_weight")
         self.add_entry(ay8000b, 1, "黏度 cPs", "ay8000b_viscosity")
         self.add_entry(ay8000b, 2, "凝膠時間 sec", "ay8000b_gel_time")
 
         hy8000 = ttk.LabelFrame(parent, text="HY8000", padding=(8, 6))
         hy8000.grid(row=3, column=0, columnspan=2, sticky="ew", pady=2)
-        self.add_entry(hy8000, 0, "HY8000數量", "hy8000_quantity")
+        self.add_entry(hy8000, 0, "HY8000重量 Kg", "hy8000_weight")
         self.add_entry(hy8000, 1, "黏度 cPs", "hy8000_viscosity")
 
         self.add_entry(parent, 4, "浸酸前引張強度 Kgf/cm2", "before_tensile_strength")
@@ -325,13 +325,13 @@ class COAApp:
     def get_yuasa_values(self) -> dict:
         keys = [
             "yuasa_lot_no",
-            "ay8000r_quantity",
+            "ay8000r_weight",
             "ay8000r_viscosity",
             "ay8000r_gel_time",
-            "ay8000b_quantity",
+            "ay8000b_weight",
             "ay8000b_viscosity",
             "ay8000b_gel_time",
-            "hy8000_quantity",
+            "hy8000_weight",
             "hy8000_viscosity",
             "before_tensile_strength",
             "after_tensile_strength",

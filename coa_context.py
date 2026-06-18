@@ -84,6 +84,25 @@ def build_yuasa_context(values: dict) -> dict:
     lot_no = require_text(values.get("lot_no"), "批號")
     if not re.fullmatch(r"[A-Za-z]\d{6}.*", lot_no):
         raise UserInputError("湯淺批號格式錯誤，前 7 碼需為 1 個英文字母加 6 個日期數字，例如 T260101。")
+    AY8000R_UNIT_WEIGHT = 4
+    AY8000B_UNIT_WEIGHT = 4
+    HY8000_UNIT_WEIGHT = 10
+    
+    ay8000r_weight = parse_positive_int(values.get("ay8000r_weight"), "AY8000R重量 Kg")
+    ay8000b_weight = parse_positive_int(values.get("ay8000b_weight"), "AY8000B重量 Kg")
+    hy8000_weight = parse_positive_int(values.get("hy8000_weight"), "HY8000重量 Kg")
+
+    if ay8000r_weight % AY8000R_UNIT_WEIGHT != 0:
+        raise UserInputError("AY8000R重量必須是4的倍數。")
+    ay8000r_quantity = ay8000r_weight // AY8000R_UNIT_WEIGHT
+
+    if ay8000b_weight % AY8000B_UNIT_WEIGHT != 0:
+        raise UserInputError("AY8000B重量必須是4的倍數。")
+    ay8000b_quantity = ay8000b_weight // AY8000B_UNIT_WEIGHT
+
+    if hy8000_weight % HY8000_UNIT_WEIGHT != 0:
+        raise UserInputError("HY8000重量必須是10的倍數。")
+    hy8000_quantity = hy8000_weight // HY8000_UNIT_WEIGHT
 
     try:
         year = 2000 + int(lot_no[1:3])
@@ -104,9 +123,9 @@ def build_yuasa_context(values: dict) -> dict:
         "product_name": "AY8000RB",
         "date": test_date,
         "lot_no": lot_no,
-        "ay8000r_quant": format_numeric_text(parse_positive_int(values.get("ay8000r_quantity"), "AY8000R數量")),
-        "ay8000b_quant": format_numeric_text(parse_positive_int(values.get("ay8000b_quantity"), "AY8000B數量")),
-        "hy8000_quant": format_numeric_text(parse_positive_int(values.get("hy8000_quantity"), "HY8000數量")),
+        "ay8000r_quant": format_numeric_text(ay8000r_quantity),
+        "ay8000b_quant": format_numeric_text(ay8000b_quantity),
+        "hy8000_quant": format_numeric_text(hy8000_quantity),
         "due_date": time.strftime("%Y/%m/%d", due_date.timetuple()),
         "ay8000r_viscosity": format_numeric_text(parse_positive_int(values.get("ay8000r_viscosity"), "AY8000R 黏度 cPs")),
         "ay8000b_viscosity": format_numeric_text(parse_positive_int(values.get("ay8000b_viscosity"), "AY8000B 黏度 cPs")),

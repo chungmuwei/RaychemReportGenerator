@@ -7,8 +7,8 @@ from tkinter import Tk, filedialog, messagebox, ttk
 import tkinter as tk
 from tkinter import font as tkfont
 
-import generator
-from coa_config import (
+from . import generator
+from .coa_config import (
     BUSWAY_PRODUCT_NAME,
     BUSWAY_TEMPLATE_FILE,
     DEBUG,
@@ -24,12 +24,24 @@ from coa_config import (
     load_product_specs,
     save_all_paths,
 )
-from coa_context import build_type_1_context, build_yuasa_context, type_1_uses_user_quantity
-from coa_utils import UserInputError, format_numeric_text, format_type_1_viscosity, mousewheel_scroll_units
+from .coa_context import (
+    build_type_1_context,
+    build_yuasa_context,
+    type_1_uses_user_quantity,
+)
+from .coa_utils import (
+    UserInputError,
+    format_numeric_text,
+    format_type_1_viscosity,
+    mousewheel_scroll_units,
+)
 
 
 class ScrollableFrame(ttk.Frame):
+    """A themed frame whose contents can scroll vertically."""
+
     def __init__(self, parent):
+        """Initialize the canvas, scrollbar, and inner content frame."""
         super().__init__(parent)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -41,23 +53,32 @@ class ScrollableFrame(ttk.Frame):
         scrollbar.grid(row=0, column=1, sticky="ns")
 
         self.body = ttk.Frame(self.canvas, padding=10)
-        self.canvas_window = self.canvas.create_window((0, 0), window=self.body, anchor="nw")
+        self.canvas_window = self.canvas.create_window(
+            (0, 0),
+            window=self.body,
+            anchor="nw",
+        )
         self.body.columnconfigure(0, weight=1)
 
         self.body.bind("<Configure>", self.update_scroll_region)
         self.canvas.bind("<Configure>", self.update_canvas_width)
 
     def update_scroll_region(self, _event=None):
+        """Resize the canvas scroll region to include all child widgets."""
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
     def update_canvas_width(self, event):
+        """Keep the inner frame width synchronized with the canvas."""
         self.canvas.itemconfigure(self.canvas_window, width=event.width)
 
     def scroll_units(self, units: int):
+        """Scroll the content vertically by the requested number of units."""
         self.canvas.yview_scroll(units, "units")
 
 
 class COAApp:
+    """Desktop interface for validating inputs and exporting COA reports."""
+
     def __init__(
         self,
         root: Tk,
@@ -66,8 +87,11 @@ class COAApp:
         dialog=messagebox,
         file_dialog=filedialog,
     ):
+        """Initialize application state, window behavior, and widgets."""
         self.root = root
-        self.product_specs = product_specs if product_specs is not None else load_product_specs()
+        self.product_specs = (
+            product_specs if product_specs is not None else load_product_specs()
+        )
         self.report_generator = report_generator
         self.dialog = dialog
         self.file_dialog = file_dialog
@@ -80,8 +104,8 @@ class COAApp:
         self.active_company: str | None = None
 
         self.root.title("瑞肯材料品檢報告產生器")
-        self.root.geometry("900x600")
-        self.root.minsize(760, 520)
+        self.root.geometry("720x500")
+        self.root.minsize(660, 460)
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.root.report_callback_exception = self.report_callback_exception
 
@@ -89,6 +113,7 @@ class COAApp:
         self.build_layout()
 
     def configure_style(self):
+        """Configure shared fonts and themed widget styles."""
         default_font = tkfont.nametofont("TkDefaultFont")
         default_font.configure(size=16)
         text_font = tkfont.nametofont("TkTextFont")
@@ -101,18 +126,18 @@ class COAApp:
         style.configure("TFrame", padding=0)
 
     def build_layout(self):
+        """Build company tabs, report forms, and scrolling behavior."""
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
+        mainframe = ttk.Frame(self.root, padding=(10, 10, 10, 10))
+        mainframe.grid(row=0, column=0, sticky="nsew")
+        mainframe.columnconfigure(0, weight=1)
+        mainframe.rowconfigure(1, weight=1)
 
-        outer = ttk.Frame(self.root, padding=10)
-        outer.grid(row=0, column=0, sticky="nsew")
-        outer.columnconfigure(0, weight=1)
-        outer.rowconfigure(1, weight=1)
-
-        self.tab_bar = ttk.Frame(outer)
+        self.tab_bar = ttk.Frame(mainframe)
         self.tab_bar.grid(row=0, column=0, sticky="w", pady=(0, 8))
 
-        self.scroll_frame = ScrollableFrame(outer)
+        self.scroll_frame = ScrollableFrame(mainframe)
         self.scroll_frame.grid(row=1, column=0, sticky="nsew")
 
         etacom = self.add_company_tab("etacom", "安達康", 0)
@@ -156,6 +181,7 @@ class COAApp:
         self.root.bind_all("<Button-5>", self.on_scroll_down)
 
     def add_company_tab(self, company: str, title: str, column: int) -> ttk.Frame:
+        """Add a company selector and return its associated content frame."""
         button = ttk.Button(
             self.tab_bar,
             text=title,
@@ -170,11 +196,14 @@ class COAApp:
         return frame
 
     def switch_company(self, company: str):
+        """Display one company's form and hide the previously active form."""
         if company == self.active_company:
             return
         if self.active_company:
             self.company_frames[self.active_company].grid_remove()
-            self.company_buttons[self.active_company].configure(style="CompanyTab.TButton")
+            self.company_buttons[self.active_company].configure(
+                style="CompanyTab.TButton"
+            )
         self.company_frames[company].grid(row=0, column=0, sticky="nw")
         self.company_buttons[company].configure(style="SelectedCompanyTab.TButton")
         self.active_company = company
@@ -182,16 +211,19 @@ class COAApp:
         self.root.after_idle(self.scroll_frame.update_scroll_region)
 
     def on_mousewheel(self, event):
+        """Scroll the active form in response to mouse-wheel input."""
         units = mousewheel_scroll_units(event.delta)
         if units:
             self.scroll_frame.scroll_units(units)
         return "break"
 
     def on_scroll_up(self, _event):
+        """Scroll the active form upward for Linux button events."""
         self.scroll_frame.scroll_units(-1)
         return "break"
 
     def on_scroll_down(self, _event):
+        """Scroll the active form downward for Linux button events."""
         self.scroll_frame.scroll_units(1)
         return "break"
 
@@ -206,14 +238,25 @@ class COAApp:
         qty_products: set[str] | None = None,
         include_gel_time: bool = True,
     ):
-        listbox = self.add_listbox(parent, 0, "品名", f"{company}_product_name", products, default_product, visible_products)
+        """Build the shared form used by type-1 company reports."""
+        listbox = self.add_listbox(
+            parent,
+            0,
+            "品名",
+            f"{company}_product_name",
+            products,
+            default_product,
+            visible_products,
+        )
         self.add_entry(parent, 1, "批號", f"{company}_lot_no", "T")
         next_row = 2
         if qty_products:
             self.add_entry(parent, next_row, "數量", f"{company}_quantity")
             listbox.bind(
                 "<<ListboxSelect>>",
-                lambda _event, c=company, qp=qty_products: self.update_type_1_quantity_state(c, qp),
+                lambda _event, c=company, qp=qty_products: (
+                    self.update_type_1_quantity_state(c, qp)
+                ),
             )
             self.update_type_1_quantity_state(company, qty_products)
             next_row += 1
@@ -222,14 +265,28 @@ class COAApp:
         if include_gel_time:
             self.add_entry(parent, next_row, "凝膠時間 sec", f"{company}_gel_time")
             next_row += 1
-        self.add_entry(parent, next_row, "檢測日期(YYYY/MM/DD)", f"{company}_date", time.strftime("%Y/%m/%d"))
+        self.add_entry(
+            parent,
+            next_row,
+            "檢測日期(YYYY/MM/DD)",
+            f"{company}_date",
+            time.strftime("%Y/%m/%d"),
+        )
         ttk.Button(
             parent,
             text="輸出報告",
-            command=self.safe_callback(lambda: self.export_type_1_report(company, template, qty_products, include_gel_time)),
+            command=self.safe_callback(
+                lambda: self.export_type_1_report(
+                    company,
+                    template,
+                    qty_products,
+                    include_gel_time,
+                )
+            ),
         ).grid(row=next_row + 1, column=1, sticky="w", pady=(8, 0))
 
     def build_yuasa_section(self, parent):
+        """Build the Yuasa-specific report input form."""
         self.add_entry(parent, 0, "批號", "yuasa_lot_no", "T")
 
         ay8000r = ttk.LabelFrame(parent, text="AY8000R", padding=(8, 6))
@@ -249,17 +306,30 @@ class COAApp:
         self.add_entry(hy8000, 0, "HY8000重量 Kg", "hy8000_weight")
         self.add_entry(hy8000, 1, "黏度 cPs", "hy8000_viscosity")
 
-        self.add_entry(parent, 4, "浸酸前引張強度 Kgf/cm2", "before_tensile_strength")
-        self.add_entry(parent, 5, "浸酸後引張強度 Kgf/cm2", "after_tensile_strength")
+        self.add_entry(
+            parent, 4, "浸酸前引張強度 Kgf/cm2", "before_tensile_strength"
+        )
+        self.add_entry(
+            parent, 5, "浸酸後引張強度 Kgf/cm2", "after_tensile_strength"
+        )
         self.add_entry(parent, 6, "耐酸性 %", "acid_resistance")
-        self.add_entry(parent, 7, "檢測日期(YYYY/MM/DD)", "yuasa_date", time.strftime("%Y/%m/%d"))
+        self.add_entry(
+            parent,
+            7,
+            "檢測日期(YYYY/MM/DD)",
+            "yuasa_date",
+            time.strftime("%Y/%m/%d"),
+        )
         ttk.Button(
             parent,
             text="輸出報告",
-            command=self.safe_callback(lambda: self.export_yuasa_report(YUASA_TEMPLATE_FILE)),
+            command=self.safe_callback(
+                lambda: self.export_yuasa_report(YUASA_TEMPLATE_FILE)
+            ),
         ).grid(row=8, column=1, sticky="w", pady=(8, 0))
 
     def add_entry(self, parent, row: int, label: str, key: str, default: str = ""):
+        """Add a labeled text entry and register its state by key."""
         label_widget = ttk.Label(parent, text=label)
         label_widget.grid(row=row, column=0, sticky="w", padx=(0, 8), pady=2)
         var = tk.StringVar(value=default)
@@ -280,8 +350,16 @@ class COAApp:
         default: str,
         visible_items: int,
     ):
-        ttk.Label(parent, text=label).grid(row=row, column=0, sticky="nw", padx=(0, 8), pady=2)
-        listbox = tk.Listbox(parent, height=visible_items, width=26, exportselection=False)
+        """Add a labeled list box, populate it, and select its default item."""
+        ttk.Label(parent, text=label).grid(
+            row=row, column=0, sticky="nw", padx=(0, 8), pady=2
+        )
+        listbox = tk.Listbox(
+            parent,
+            height=visible_items,
+            width=26,
+            exportselection=False,
+        )
         for item in items:
             listbox.insert(tk.END, item)
         if default in items:
@@ -293,22 +371,31 @@ class COAApp:
         return listbox
 
     def get_listbox_value(self, key: str) -> str:
+        """Return the selected list-box value or an empty string."""
         selection = self.listboxes[key].curselection()
         if not selection:
             return ""
         return self.listboxes[key].get(selection[0])
 
     def update_type_1_quantity_state(self, company: str, qty_products: set[str]):
+        """Enable quantity input only for products that require it."""
         key = f"{company}_quantity"
         label = self.labels.get(key)
         entry = self.entries.get(f"{company}_quantity")
         if label is None or entry is None:
             return
-        state = "normal" if self.get_listbox_value(f"{company}_product_name") in qty_products else "disabled"
+        selected_product = self.get_listbox_value(f"{company}_product_name")
+        state = "normal" if selected_product in qty_products else "disabled"
         label.configure(state=state)
         entry.configure(state=state)
 
-    def get_type_1_values(self, company: str, qty_products: set[str] | None = None, include_gel_time: bool = True) -> dict:
+    def get_type_1_values(
+        self,
+        company: str,
+        qty_products: set[str] | None = None,
+        include_gel_time: bool = True,
+    ) -> dict:
+        """Collect the current type-1 form values for context building."""
         product_name = self.get_listbox_value(f"{company}_product_name")
         values = {
             "product_name": product_name,
@@ -323,6 +410,7 @@ class COAApp:
         return values
 
     def get_yuasa_values(self) -> dict:
+        """Collect and normalize the current Yuasa form values."""
         keys = [
             "yuasa_lot_no",
             "ay8000r_weight",
@@ -344,14 +432,26 @@ class COAApp:
         return values
 
     def ask_output_directory(self, company: str, title: str) -> str:
-        output_dir = self.file_dialog.askdirectory(initialdir=export_paths[company], title=title, mustexist=True)
+        """Ask for and persist a company's report output directory."""
+        output_dir = self.file_dialog.askdirectory(
+            initialdir=export_paths[company],
+            title=title,
+            mustexist=True,
+        )
         if not output_dir:
             return ""
         export_paths[company] = output_dir
         save_all_paths(export_paths)
         return output_dir
 
-    def export_type_1_report(self, company: str, template: str, qty_products: set[str] | None = None, include_gel_time: bool = True):
+    def export_type_1_report(
+        self,
+        company: str,
+        template: str,
+        qty_products: set[str] | None = None,
+        include_gel_time: bool = True,
+    ):
+        """Validate, generate, and announce a type-1 report export."""
         context = build_type_1_context(
             company,
             self.get_type_1_values(company, qty_products, include_gel_time),
@@ -363,30 +463,47 @@ class COAApp:
         if not output_dir:
             return
         filename = self.generate_report(template, context, output_dir)
-        self.show_message("成功", f"報告 {os.path.basename(filename)} 已成功匯出至 {output_dir}！")
+        self.show_message(
+            "成功",
+            f"報告 {os.path.basename(filename)} 已成功匯出至 {output_dir}！",
+        )
 
     def export_yuasa_report(self, template: str):
+        """Validate, generate, and announce a Yuasa report export."""
         context = build_yuasa_context(self.get_yuasa_values())
         output_dir = self.ask_output_directory("yuasa", "選擇報告輸出資料夾")
         if not output_dir:
             return
         filename = self.generate_report(template, context, output_dir)
-        self.show_message("成功", f"報告 {os.path.basename(filename)} 已成功匯出至 {output_dir}！")
+        self.show_message(
+            "成功",
+            f"報告 {os.path.basename(filename)} 已成功匯出至 {output_dir}！",
+        )
 
     def generate_report(self, template: str, context: dict, output_dir: str) -> str:
+        """Generate a report and normalize generator failures for the GUI."""
         try:
-            return self.report_generator(template_file=template, context=context, output_path=output_dir)
+            return self.report_generator(
+                template_file=template,
+                context=context,
+                output_path=output_dir,
+            )
         except Exception as exc:
             raise RuntimeError(f"匯出失敗：\n{exc}") from exc
 
     def show_message(self, title: str, message: str):
+        """Display an informational dialog."""
         self.dialog.showinfo(title, message)
 
     def show_error(self, message: str):
+        """Display an error dialog."""
         self.dialog.showerror("錯誤", message)
 
     def safe_callback(self, callback):
+        """Wrap a GUI callback with user-facing exception handling."""
+
         def wrapped():
+            """Run the callback and convert known failures into dialogs."""
             try:
                 return callback()
             except UserInputError as exc:
@@ -401,11 +518,13 @@ class COAApp:
         return wrapped
 
     def report_callback_exception(self, exc_type, exc_value, exc_traceback):
+        """Handle exceptions raised directly by Tkinter callbacks."""
         if DEBUG:
             traceback.print_exception(exc_type, exc_value, exc_traceback)
         self.show_error(f"發生未預期錯誤：\n{exc_value}")
 
     def on_close(self):
+        """Persist settings before closing the root window."""
         try:
             save_all_paths(export_paths)
         except Exception as exc:
@@ -415,6 +534,7 @@ class COAApp:
 
 
 def run():
+    """Start the Tkinter desktop application."""
     load_export_paths()
     root = Tk()
     COAApp(root)

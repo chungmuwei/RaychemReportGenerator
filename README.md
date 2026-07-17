@@ -7,8 +7,15 @@
 ## 專案結構
 
 ```
-├── app.py                    # 主程式（GUI 入口）
-├── generator.py              # 報告產生邏輯（docxtpl）
+├── src/
+│   └── raychem_report_generator/
+│       ├── __main__.py       # GUI 入口
+│       ├── app.py            # Tkinter 介面
+│       ├── coa_config.py     # 設定檔與產品資料載入
+│       ├── coa_context.py    # 報告資料驗證與組裝
+│       ├── coa_utils.py      # 輸入與格式化工具
+│       └── generator.py      # docxtpl 報告產生邏輯
+├── tests/                    # 單元測試
 ├── product_specs.json        # 各產品規格資料
 ├── requirements.txt
 ├── Makefile                  # 建置指令
@@ -43,18 +50,19 @@
 python3.13 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
+python -m pip install -e .
 ```
 
 ### 執行程式
 
 ```bash
-python app.py
+python -m raychem_report_generator
 ```
 
 ### 執行測試
 
 ```bash
-python -m unittest discover -v
+make test
 ```
 
 ---
@@ -115,7 +123,7 @@ make build
 ```bash
 git checkout main
 git pull origin main
-python -m unittest discover -v
+make test
 make tag VERSION_ARG=v1.0.0
 ```
 

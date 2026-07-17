@@ -4,17 +4,19 @@ import configparser
 import json
 import os
 
-import generator
+from . import generator
 
 APP_CONFIG_FILE = generator.resource_path("config.ini")
 DEFAULT_EXPORT_PATH = os.path.expanduser("~")
 
 
 def split_csv(value: str) -> list[str]:
+    """Split a comma-separated configuration value into non-empty items."""
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
 def load_app_config(path: str = APP_CONFIG_FILE) -> configparser.ConfigParser:
+    """Load the application INI file while preserving option name casing."""
     parser = configparser.ConfigParser()
     parser.optionxform = str
     if not parser.read(path, encoding="utf-8"):
@@ -48,20 +50,25 @@ export_paths = {company: DEFAULT_EXPORT_PATH for company in COMPANIES}
 
 
 def create_export_config_file():
+    """Create the per-user export-path configuration with default values."""
     if DEBUG:
-        print(f"Creating export config file at {CONFIG_FILE} with default paths: {export_paths}")
+        print(
+            f"Creating export config file at {CONFIG_FILE} "
+            f"with default paths: {export_paths}"
+        )
     os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
-    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-        json.dump(obj=export_paths, fp=f, ensure_ascii=False)
+    with open(CONFIG_FILE, "w", encoding="utf-8") as config_file:
+        json.dump(obj=export_paths, fp=config_file, ensure_ascii=False)
 
 
 def load_last_path(company: str):
+    """Return the last valid export directory saved for a company."""
     if not os.path.exists(CONFIG_FILE):
         create_export_config_file()
 
     try:
-        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        with open(CONFIG_FILE, "r", encoding="utf-8") as config_file:
+            data = json.load(config_file)
             saved_path = data.get(f"{company}_export_path", DEFAULT_EXPORT_PATH)
             if saved_path and os.path.isdir(saved_path):
                 return saved_path
@@ -71,35 +78,38 @@ def load_last_path(company: str):
 
 
 def save_all_paths(paths: dict):
+    """Persist all valid company export directories to user configuration."""
     if not os.path.exists(CONFIG_FILE):
         create_export_config_file()
 
     data = {}
     if os.path.exists(CONFIG_FILE):
         try:
-            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
+            with open(CONFIG_FILE, "r", encoding="utf-8") as config_file:
+                data = json.load(config_file)
         except Exception:
             pass
     for company, path in paths.items():
         if path and os.path.isdir(path):
             data[f"{company}_export_path"] = path
     try:
-        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False)
+        with open(CONFIG_FILE, "w", encoding="utf-8") as config_file:
+            json.dump(data, config_file, ensure_ascii=False)
         if DEBUG:
             print(f"Saved export config paths: {paths}")
-    except Exception as e:
+    except Exception as exc:
         if DEBUG:
-            print(f"Failed to save export config paths: {str(e)}")
+            print(f"Failed to save export config paths: {exc}")
 
 
 def load_product_specs(path: str = PRODUCT_SPECS_FILE) -> dict:
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    """Load product specifications from a JSON file."""
+    with open(path, "r", encoding="utf-8") as specs_file:
+        return json.load(specs_file)
 
 
 def load_export_paths():
+    """Load and cache the last export directory for every company."""
     for company in COMPANIES:
         export_paths[company] = load_last_path(company)
     return export_paths

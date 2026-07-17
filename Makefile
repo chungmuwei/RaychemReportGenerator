@@ -1,10 +1,13 @@
-.PHONY: build clean tag
+.PHONY: build clean tag test
 
 # 從 git tag 取得目前版本（沒有 tag 時顯示 dev）
 VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null || echo "dev")
 
 build:
 	./scripts/build_mac.sh
+
+test:
+	PYTHONPATH=src .venv/bin/python -m unittest discover -v
 
 # 打版本 tag 並 push
 # 用法：make tag VERSION=v1.0.0

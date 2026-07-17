@@ -7,7 +7,11 @@ from raychem_report_generator import generator
 
 class GeneratorTests(unittest.TestCase):
     def test_sequence_filename_returns_docx_when_file_does_not_exist(self):
-        """Return the base DOCX path when no report exists."""
+        """Return the base DOCX path when no report exists.
+
+        Returns:
+            None.
+        """
         with tempfile.TemporaryDirectory() as tmpdir:
             base_path = os.path.join(tmpdir, "COA_Test_T260614")
 
@@ -17,7 +21,11 @@ class GeneratorTests(unittest.TestCase):
             )
 
     def test_sequence_filename_renames_existing_file_and_returns_next_suffix(self):
-        """Preserve the first report and return the second sequenced path."""
+        """Preserve the first report and return the second sequenced path.
+
+        Returns:
+            None.
+        """
         with tempfile.TemporaryDirectory() as tmpdir:
             base_path = os.path.join(tmpdir, "COA_Test_T260614")
             existing = base_path + generator.DOCX_FILE_EXTENSION
@@ -36,7 +44,11 @@ class GeneratorTests(unittest.TestCase):
             )
 
     def test_resource_path_resolves_project_relative_file(self):
-        """Resolve data resources relative to the project root."""
+        """Resolve data resources relative to the project root.
+
+        Returns:
+            None.
+        """
         path = generator.resource_path("product_specs.json")
 
         self.assertTrue(path.endswith("product_specs.json"))

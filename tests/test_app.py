@@ -56,42 +56,88 @@ PRODUCT_SPECS = {
 
 class DummyDialog:
     def __init__(self):
-        """Initialize captured informational and error dialogs."""
+        """Initialize captured informational and error dialogs.
+
+        Returns:
+            None.
+        """
         self.infos = []
         self.errors = []
 
     def showinfo(self, title, message):
-        """Capture an informational dialog call."""
+        """Capture an informational dialog call.
+
+        Args:
+            title: Dialog title supplied by the application.
+            message: Dialog message supplied by the application.
+
+        Returns:
+            None.
+        """
         self.infos.append((title, message))
 
     def showerror(self, title, message):
-        """Capture an error dialog call."""
+        """Capture an error dialog call.
+
+        Args:
+            title: Dialog title supplied by the application.
+            message: Dialog message supplied by the application.
+
+        Returns:
+            None.
+        """
         self.errors.append((title, message))
 
 
 class FakeVar:
     def __init__(self, value):
-        """Store a test value."""
+        """Store a test value.
+
+        Args:
+            value: Value returned by :meth:`get`.
+
+        Returns:
+            None.
+        """
         self.value = value
 
     def get(self):
-        """Return the stored test value."""
+        """Return the stored test value.
+
+        Returns:
+            The value supplied during initialization.
+        """
         return self.value
 
 
 class FakeWidget:
     def __init__(self):
-        """Initialize an empty widget configuration."""
+        """Initialize an empty widget configuration.
+
+        Returns:
+            None.
+        """
         self.config = {}
 
     def configure(self, **kwargs):
-        """Capture widget configuration changes."""
+        """Capture widget configuration changes.
+
+        Args:
+            **kwargs: Widget options applied by the application.
+
+        Returns:
+            None.
+        """
         self.config.update(kwargs)
 
 
 class AppValidationTests(unittest.TestCase):
     def test_build_type_1_context_formats_and_populates_specs(self):
-        """Build a type-1 context with formatted specification values."""
+        """Build a type-1 context with formatted specification values.
+
+        Returns:
+            None.
+        """
         context = app.build_type_1_context(
             "etacom",
             {
@@ -112,7 +158,11 @@ class AppValidationTests(unittest.TestCase):
         self.assertEqual(context["gel_time"], "55")
 
     def test_build_type_1_context_rejects_missing_lot_no(self):
-        """Reject type-1 inputs without a lot number."""
+        """Reject type-1 inputs without a lot number.
+
+        Returns:
+            None.
+        """
         with self.assertRaisesRegex(app.UserInputError, "批號不可空白"):
             app.build_type_1_context(
                 "etacom",
@@ -127,7 +177,11 @@ class AppValidationTests(unittest.TestCase):
             )
 
     def test_build_type_1_context_rejects_invalid_date(self):
-        """Reject type-1 inputs with a nonexistent calendar date."""
+        """Reject type-1 inputs with a nonexistent calendar date.
+
+        Returns:
+            None.
+        """
         with self.assertRaisesRegex(
             app.UserInputError,
             "檢測日期不是有效日期",
@@ -145,7 +199,11 @@ class AppValidationTests(unittest.TestCase):
             )
 
     def test_build_type_1_context_rejects_compact_date_format(self):
-        """Reject compact dates that do not use slash separators."""
+        """Reject compact dates that do not use slash separators.
+
+        Returns:
+            None.
+        """
         with self.assertRaisesRegex(app.UserInputError, "YYYY/MM/DD"):
             app.build_type_1_context(
                 "etacom",
@@ -160,7 +218,11 @@ class AppValidationTests(unittest.TestCase):
             )
 
     def test_build_uic_context_populates_template_fields_without_gel_time(self):
-        """Build UIC fields without requiring gel time."""
+        """Build UIC fields without requiring gel time.
+
+        Returns:
+            None.
+        """
         context = app.build_type_1_context(
             "uic",
             {
@@ -186,7 +248,11 @@ class AppValidationTests(unittest.TestCase):
         self.assertNotIn("gel_time", context)
 
     def test_build_uic_context_uses_entered_qty_when_enabled(self):
-        """Use the entered UIC quantity when configured."""
+        """Use the entered UIC quantity when configured.
+
+        Returns:
+            None.
+        """
         context = app.build_type_1_context(
             "uic",
             {
@@ -204,7 +270,11 @@ class AppValidationTests(unittest.TestCase):
         self.assertEqual(context["qty"], "21")
 
     def test_build_etacom_hy2537_context_uses_entered_qty(self):
-        """Use the entered quantity for Etacom HY2537."""
+        """Use the entered quantity for Etacom HY2537.
+
+        Returns:
+            None.
+        """
         context = app.build_type_1_context(
             "etacom",
             {
@@ -223,7 +293,11 @@ class AppValidationTests(unittest.TestCase):
         self.assertEqual(context["qty"], "3")
 
     def test_build_etacom_hy2537_context_requires_qty_when_enabled(self):
-        """Require quantity for Etacom HY2537."""
+        """Require quantity for Etacom HY2537.
+
+        Returns:
+            None.
+        """
         with self.assertRaisesRegex(app.UserInputError, "數量不可空白"):
             app.build_type_1_context(
                 "etacom",
@@ -240,7 +314,11 @@ class AppValidationTests(unittest.TestCase):
             )
 
     def test_uic_context_renders_uic_template(self):
-        """Render a UIC context with the configured template."""
+        """Render a UIC context with the configured template.
+
+        Returns:
+            None.
+        """
         context = app.build_type_1_context(
             "uic",
             {
@@ -266,7 +344,11 @@ class AppValidationTests(unittest.TestCase):
             self.assertTrue(output.endswith(".docx"))
 
     def test_build_yuasa_context_calculates_due_date_and_tensile_diff(self):
-        """Calculate Yuasa derived dates, quantities, and strength values."""
+        """Calculate Yuasa derived dates, quantities, and strength values.
+
+        Returns:
+            None.
+        """
         context = app.build_yuasa_context(
             {
                 "date": "2026/06/14",
@@ -295,7 +377,11 @@ class AppValidationTests(unittest.TestCase):
         self.assertEqual(context["acid_resistance"], "98.23")
 
     def test_build_yuasa_context_rejects_invalid_lot_number(self):
-        """Reject a Yuasa lot number with an invalid shape."""
+        """Reject a Yuasa lot number with an invalid shape.
+
+        Returns:
+            None.
+        """
         with self.assertRaisesRegex(app.UserInputError, "湯淺批號格式錯誤"):
             app.build_yuasa_context(
                 {
@@ -316,7 +402,11 @@ class AppValidationTests(unittest.TestCase):
             )
 
     def test_mousewheel_scroll_units_handles_trackpad_and_wheel_deltas(self):
-        """Normalize mouse-wheel and trackpad deltas."""
+        """Normalize mouse-wheel and trackpad deltas.
+
+        Returns:
+            None.
+        """
         self.assertEqual(app.mousewheel_scroll_units(120), -1)
         self.assertEqual(app.mousewheel_scroll_units(-120), 1)
         self.assertEqual(app.mousewheel_scroll_units(1), -1)
@@ -324,13 +414,21 @@ class AppValidationTests(unittest.TestCase):
         self.assertEqual(app.mousewheel_scroll_units(0), 0)
 
     def test_type_1_viscosity_format_avoids_forced_trailing_zeroes(self):
-        """Format viscosity without unnecessary trailing zeroes."""
+        """Format viscosity without unnecessary trailing zeroes.
+
+        Returns:
+            None.
+        """
         self.assertEqual(app.format_type_1_viscosity(30), "30")
         self.assertEqual(app.format_type_1_viscosity(950.25), "950.2")
         self.assertEqual(app.format_type_1_viscosity(12158), "12,158")
 
     def test_numeric_text_format_adds_commas_without_changing_decimals(self):
-        """Add thousands separators while preserving decimal text."""
+        """Add thousands separators while preserving decimal text.
+
+        Returns:
+            None.
+        """
         self.assertEqual(app.format_numeric_text("1300KG"), "1,300KG")
         self.assertEqual(app.format_numeric_text("1000~1500"), "1,000~1,500")
         self.assertEqual(app.format_numeric_text("1234.5"), "1,234.5")
@@ -338,13 +436,21 @@ class AppValidationTests(unittest.TestCase):
 
 class AppCallbackTests(unittest.TestCase):
     def make_uninitialized_app(self):
-        """Build a minimal application object for callback tests."""
+        """Build a minimal application object for callback tests.
+
+        Returns:
+            A partially initialized application with a dummy dialog provider.
+        """
         app_obj = object.__new__(app.COAApp)
         app_obj.dialog = DummyDialog()
         return app_obj
 
     def test_safe_callback_shows_user_input_error_popup(self):
-        """Show validation errors through the dialog adapter."""
+        """Show validation errors through the dialog adapter.
+
+        Returns:
+            None.
+        """
         app_obj = self.make_uninitialized_app()
         callback = app.COAApp.safe_callback(
             app_obj,
@@ -361,7 +467,11 @@ class AppCallbackTests(unittest.TestCase):
         )
 
     def test_safe_callback_shows_unexpected_runtime_error_popup(self):
-        """Show unexpected callback errors through the dialog adapter."""
+        """Show unexpected callback errors through the dialog adapter.
+
+        Returns:
+            None.
+        """
         app_obj = self.make_uninitialized_app()
         callback = app.COAApp.safe_callback(
             app_obj,
@@ -375,7 +485,11 @@ class AppCallbackTests(unittest.TestCase):
         self.assertIn("boom", app_obj.dialog.errors[0][1])
 
     def test_export_type_1_report_uses_native_directory_and_generator(self):
-        """Export type-1 reports to the selected native directory."""
+        """Export type-1 reports to the selected native directory.
+
+        Returns:
+            None.
+        """
         calls = []
         with tempfile.TemporaryDirectory() as tmpdir:
             app_obj = self.make_uninitialized_app()
@@ -392,7 +506,16 @@ class AppCallbackTests(unittest.TestCase):
             )
 
             def fake_generator(template_file, context, output_path):
-                """Capture report generator arguments and return a fake path."""
+                """Capture report generator arguments and return a fake path.
+
+                Args:
+                    template_file: Template path passed by the application.
+                    context: Rendering context passed by the application.
+                    output_path: Destination passed by the application.
+
+                Returns:
+                    A synthetic report filename in the destination directory.
+                """
                 calls.append((template_file, context, output_path))
                 return os.path.join(output_path, "COA_test.docx")
 
@@ -407,7 +530,11 @@ class AppCallbackTests(unittest.TestCase):
         self.assertIn("COA_test.docx", app_obj.dialog.infos[0][1])
 
     def test_export_type_1_validation_error_shows_before_directory_dialog(self):
-        """Validate type-1 inputs before asking for an output directory."""
+        """Validate type-1 inputs before asking for an output directory.
+
+        Returns:
+            None.
+        """
         app_obj = self.make_uninitialized_app()
         app_obj.product_specs = PRODUCT_SPECS
         app_obj.get_type_1_values = (
@@ -436,7 +563,11 @@ class AppCallbackTests(unittest.TestCase):
         self.assertEqual(app_obj.dialog.infos, [])
 
     def test_uic_export_does_not_require_gel_time(self):
-        """Export UIC reports without a gel-time input."""
+        """Export UIC reports without a gel-time input.
+
+        Returns:
+            None.
+        """
         calls = []
         with tempfile.TemporaryDirectory() as tmpdir:
             app_obj = self.make_uninitialized_app()
@@ -453,7 +584,16 @@ class AppCallbackTests(unittest.TestCase):
             )
 
             def fake_generator(template_file, context, output_path):
-                """Capture UIC generator arguments and return a fake path."""
+                """Capture UIC generator arguments and return a fake path.
+
+                Args:
+                    template_file: Template path passed by the application.
+                    context: Rendering context passed by the application.
+                    output_path: Destination passed by the application.
+
+                Returns:
+                    A synthetic UIC report filename.
+                """
                 calls.append((template_file, context, output_path))
                 return os.path.join(output_path, "COA_HY8101_T260528.docx")
 
@@ -474,7 +614,11 @@ class AppCallbackTests(unittest.TestCase):
         self.assertEqual(app_obj.dialog.infos[0][0], "成功")
 
     def test_yuasa_validation_error_shows_before_directory_dialog(self):
-        """Validate Yuasa inputs before asking for an output directory."""
+        """Validate Yuasa inputs before asking for an output directory.
+
+        Returns:
+            None.
+        """
         app_obj = self.make_uninitialized_app()
         app_obj.get_yuasa_values = lambda: {
             "date": "2026/06/14",
@@ -511,7 +655,14 @@ class AppCallbackTests(unittest.TestCase):
 
 class AppWidgetStateTests(unittest.TestCase):
     def make_quantity_state_app(self, product_name):
-        """Build a minimal application object for quantity-state tests."""
+        """Build a minimal application object for quantity-state tests.
+
+        Args:
+            product_name: Product returned by the fake list-box accessor.
+
+        Returns:
+            A partially initialized application with fake quantity widgets.
+        """
         app_obj = object.__new__(app.COAApp)
         app_obj.labels = {"etacom_quantity": FakeWidget()}
         app_obj.entries = {"etacom_quantity": FakeWidget()}
@@ -519,7 +670,11 @@ class AppWidgetStateTests(unittest.TestCase):
         return app_obj
 
     def test_etacom_quantity_label_and_entry_disable_for_non_qty_product(self):
-        """Disable quantity controls for products with fixed quantities."""
+        """Disable quantity controls for products with fixed quantities.
+
+        Returns:
+            None.
+        """
         app_obj = self.make_quantity_state_app("樹脂CY2536L")
 
         app.COAApp.update_type_1_quantity_state(
@@ -532,7 +687,11 @@ class AppWidgetStateTests(unittest.TestCase):
         self.assertEqual(app_obj.entries["etacom_quantity"].config["state"], "disabled")
 
     def test_etacom_quantity_label_and_entry_enable_for_hy2537(self):
-        """Enable quantity controls for Etacom HY2537."""
+        """Enable quantity controls for Etacom HY2537.
+
+        Returns:
+            None.
+        """
         app_obj = self.make_quantity_state_app("硬化劑HY2537")
 
         app.COAApp.update_type_1_quantity_state(
@@ -545,7 +704,11 @@ class AppWidgetStateTests(unittest.TestCase):
         self.assertEqual(app_obj.entries["etacom_quantity"].config["state"], "normal")
 
     def test_type_1_values_only_collects_qty_for_selected_qty_product(self):
-        """Collect quantity only for products configured to require it."""
+        """Collect quantity only for products configured to require it.
+
+        Returns:
+            None.
+        """
         app_obj = object.__new__(app.COAApp)
         app_obj.get_listbox_value = lambda key: "樹脂CY2536L"
         app_obj.vars = {

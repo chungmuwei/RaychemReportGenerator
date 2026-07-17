@@ -12,7 +12,14 @@ DOCX_FILE_EXTENSION = ".docx"
 
 
 def resource_path(relative_path: str) -> str:
-    """Return an absolute resource path for source and PyInstaller runs."""
+    """Return an absolute resource path for source and PyInstaller runs.
+
+    Args:
+        relative_path: Resource path relative to the project or bundle root.
+
+    Returns:
+        The absolute path to the requested resource.
+    """
     package_root = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.abspath(os.path.join(package_root, os.pardir, os.pardir))
     base_path = getattr(sys, "_MEIPASS", project_root)
@@ -24,7 +31,16 @@ def generate_coa_report(
     context: dict[str, str],
     output_path: str | None = None,
 ) -> str:
-    """Render and save a COA report, returning its sequenced filename."""
+    """Render and save a COA report from a Word template.
+
+    Args:
+        template_file: Path to the Word template resource.
+        context: Template variables containing validated report data.
+        output_path: Destination directory, or ``None`` for the test default.
+
+    Returns:
+        The absolute or destination-relative path of the saved DOCX report.
+    """
     print(
         "Generate COA report with template file: "
         f"{template_file} and context: {context}"
@@ -48,7 +64,14 @@ def generate_coa_report(
 
 
 def sequence_filename(path: str) -> str:
-    """Return an available filename while preserving an existing first file."""
+    """Return an available filename while preserving an existing first file.
+
+    Args:
+        path: Desired report path without a file extension.
+
+    Returns:
+        An available DOCX path, with a numeric suffix when needed.
+    """
     first_path = f"{path}{DOCX_FILE_EXTENSION}"
     if os.path.exists(first_path):
         os.rename(first_path, f"{path}-1{DOCX_FILE_EXTENSION}")

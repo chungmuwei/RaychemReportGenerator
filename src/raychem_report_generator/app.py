@@ -41,7 +41,14 @@ class ScrollableFrame(ttk.Frame):
     """A themed frame whose contents can scroll vertically."""
 
     def __init__(self, parent):
-        """Initialize the canvas, scrollbar, and inner content frame."""
+        """Initialize the canvas, scrollbar, and inner content frame.
+
+        Args:
+            parent: Tkinter parent widget that owns this frame.
+
+        Returns:
+            None.
+        """
         super().__init__(parent)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -64,15 +71,36 @@ class ScrollableFrame(ttk.Frame):
         self.canvas.bind("<Configure>", self.update_canvas_width)
 
     def update_scroll_region(self, _event=None):
-        """Resize the canvas scroll region to include all child widgets."""
+        """Resize the canvas scroll region to include all child widgets.
+
+        Args:
+            _event: Optional Tkinter configure event; its value is unused.
+
+        Returns:
+            None.
+        """
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
     def update_canvas_width(self, event):
-        """Keep the inner frame width synchronized with the canvas."""
+        """Keep the inner frame width synchronized with the canvas.
+
+        Args:
+            event: Tkinter configure event containing the canvas width.
+
+        Returns:
+            None.
+        """
         self.canvas.itemconfigure(self.canvas_window, width=event.width)
 
     def scroll_units(self, units: int):
-        """Scroll the content vertically by the requested number of units."""
+        """Scroll the content vertically by the requested number of units.
+
+        Args:
+            units: Signed number of vertical units to scroll.
+
+        Returns:
+            None.
+        """
         self.canvas.yview_scroll(units, "units")
 
 
@@ -87,7 +115,18 @@ class COAApp:
         dialog=messagebox,
         file_dialog=filedialog,
     ):
-        """Initialize application state, window behavior, and widgets."""
+        """Initialize application state, window behavior, and widgets.
+
+        Args:
+            root: Root Tkinter window.
+            product_specs: Optional specifications used instead of loading JSON.
+            report_generator: Callable that renders and saves a report.
+            dialog: Dialog provider exposing ``showinfo`` and ``showerror``.
+            file_dialog: File-dialog provider exposing ``askdirectory``.
+
+        Returns:
+            None.
+        """
         self.root = root
         self.product_specs = (
             product_specs if product_specs is not None else load_product_specs()
@@ -113,7 +152,11 @@ class COAApp:
         self.build_layout()
 
     def configure_style(self):
-        """Configure shared fonts and themed widget styles."""
+        """Configure shared fonts and themed widget styles.
+
+        Returns:
+            None.
+        """
         default_font = tkfont.nametofont("TkDefaultFont")
         default_font.configure(size=16)
         text_font = tkfont.nametofont("TkTextFont")
@@ -126,7 +169,11 @@ class COAApp:
         style.configure("TFrame", padding=0)
 
     def build_layout(self):
-        """Build company tabs, report forms, and scrolling behavior."""
+        """Build company tabs, report forms, and scrolling behavior.
+
+        Returns:
+            None.
+        """
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
         mainframe = ttk.Frame(self.root, padding=(10, 10, 10, 10))
@@ -181,7 +228,16 @@ class COAApp:
         self.root.bind_all("<Button-5>", self.on_scroll_down)
 
     def add_company_tab(self, company: str, title: str, column: int) -> ttk.Frame:
-        """Add a company selector and return its associated content frame."""
+        """Add a company selector and return its associated content frame.
+
+        Args:
+            company: Internal company identifier.
+            title: User-facing tab label.
+            column: Grid column used for the selector button.
+
+        Returns:
+            The frame that should contain the company's form.
+        """
         button = ttk.Button(
             self.tab_bar,
             text=title,
@@ -196,7 +252,14 @@ class COAApp:
         return frame
 
     def switch_company(self, company: str):
-        """Display one company's form and hide the previously active form."""
+        """Display one company's form and hide the previously active form.
+
+        Args:
+            company: Identifier of the company form to display.
+
+        Returns:
+            None.
+        """
         if company == self.active_company:
             return
         if self.active_company:
@@ -211,19 +274,40 @@ class COAApp:
         self.root.after_idle(self.scroll_frame.update_scroll_region)
 
     def on_mousewheel(self, event):
-        """Scroll the active form in response to mouse-wheel input."""
+        """Scroll the active form in response to mouse-wheel input.
+
+        Args:
+            event: Tkinter event containing a mouse-wheel delta.
+
+        Returns:
+            ``"break"`` to stop further event propagation.
+        """
         units = mousewheel_scroll_units(event.delta)
         if units:
             self.scroll_frame.scroll_units(units)
         return "break"
 
     def on_scroll_up(self, _event):
-        """Scroll the active form upward for Linux button events."""
+        """Scroll the active form upward for Linux button events.
+
+        Args:
+            _event: Tkinter button event; its value is unused.
+
+        Returns:
+            ``"break"`` to stop further event propagation.
+        """
         self.scroll_frame.scroll_units(-1)
         return "break"
 
     def on_scroll_down(self, _event):
-        """Scroll the active form downward for Linux button events."""
+        """Scroll the active form downward for Linux button events.
+
+        Args:
+            _event: Tkinter button event; its value is unused.
+
+        Returns:
+            ``"break"`` to stop further event propagation.
+        """
         self.scroll_frame.scroll_units(1)
         return "break"
 
@@ -238,7 +322,21 @@ class COAApp:
         qty_products: set[str] | None = None,
         include_gel_time: bool = True,
     ):
-        """Build the shared form used by type-1 company reports."""
+        """Build the shared form used by type-1 company reports.
+
+        Args:
+            parent: Frame that owns the form widgets.
+            company: Internal company identifier used in widget keys.
+            products: Product names displayed in the selector.
+            default_product: Product selected when the form is created.
+            visible_products: Number of visible list-box rows.
+            template: Word template used for report generation.
+            qty_products: Products requiring an entered quantity.
+            include_gel_time: Whether to include the gel-time field.
+
+        Returns:
+            None.
+        """
         listbox = self.add_listbox(
             parent,
             0,
@@ -286,7 +384,14 @@ class COAApp:
         ).grid(row=next_row + 1, column=1, sticky="w", pady=(8, 0))
 
     def build_yuasa_section(self, parent):
-        """Build the Yuasa-specific report input form."""
+        """Build the Yuasa-specific report input form.
+
+        Args:
+            parent: Frame that owns the Yuasa form widgets.
+
+        Returns:
+            None.
+        """
         self.add_entry(parent, 0, "批號", "yuasa_lot_no", "T")
 
         ay8000r = ttk.LabelFrame(parent, text="AY8000R", padding=(8, 6))
@@ -329,7 +434,18 @@ class COAApp:
         ).grid(row=8, column=1, sticky="w", pady=(8, 0))
 
     def add_entry(self, parent, row: int, label: str, key: str, default: str = ""):
-        """Add a labeled text entry and register its state by key."""
+        """Add a labeled text entry and register its state by key.
+
+        Args:
+            parent: Widget that owns the label and entry.
+            row: Grid row for both widgets.
+            label: User-facing field label.
+            key: Internal key used to register widget state.
+            default: Initial text value.
+
+        Returns:
+            The created themed entry widget.
+        """
         label_widget = ttk.Label(parent, text=label)
         label_widget.grid(row=row, column=0, sticky="w", padx=(0, 8), pady=2)
         var = tk.StringVar(value=default)
@@ -350,7 +466,20 @@ class COAApp:
         default: str,
         visible_items: int,
     ):
-        """Add a labeled list box, populate it, and select its default item."""
+        """Add a labeled list box and select its default item.
+
+        Args:
+            parent: Widget that owns the label and list box.
+            row: Grid row for both widgets.
+            label: User-facing field label.
+            key: Internal key used to register the list box.
+            items: Values displayed in the list box.
+            default: Value selected initially when present.
+            visible_items: Number of visible list-box rows.
+
+        Returns:
+            The created and populated list-box widget.
+        """
         ttk.Label(parent, text=label).grid(
             row=row, column=0, sticky="nw", padx=(0, 8), pady=2
         )
@@ -371,14 +500,29 @@ class COAApp:
         return listbox
 
     def get_listbox_value(self, key: str) -> str:
-        """Return the selected list-box value or an empty string."""
+        """Return the selected list-box value or an empty string.
+
+        Args:
+            key: Internal key of the registered list box.
+
+        Returns:
+            The selected value, or an empty string when nothing is selected.
+        """
         selection = self.listboxes[key].curselection()
         if not selection:
             return ""
         return self.listboxes[key].get(selection[0])
 
     def update_type_1_quantity_state(self, company: str, qty_products: set[str]):
-        """Enable quantity input only for products that require it."""
+        """Enable quantity input only for products that require it.
+
+        Args:
+            company: Company identifier used to locate registered widgets.
+            qty_products: Products that accept a user-entered quantity.
+
+        Returns:
+            None.
+        """
         key = f"{company}_quantity"
         label = self.labels.get(key)
         entry = self.entries.get(f"{company}_quantity")
@@ -395,7 +539,16 @@ class COAApp:
         qty_products: set[str] | None = None,
         include_gel_time: bool = True,
     ) -> dict:
-        """Collect the current type-1 form values for context building."""
+        """Collect the current type-1 form values for context building.
+
+        Args:
+            company: Company identifier used to locate form values.
+            qty_products: Products that require an entered quantity.
+            include_gel_time: Whether to collect the gel-time value.
+
+        Returns:
+            Raw form values keyed by template field name.
+        """
         product_name = self.get_listbox_value(f"{company}_product_name")
         values = {
             "product_name": product_name,
@@ -410,7 +563,11 @@ class COAApp:
         return values
 
     def get_yuasa_values(self) -> dict:
-        """Collect and normalize the current Yuasa form values."""
+        """Collect and normalize the current Yuasa form values.
+
+        Returns:
+            Raw Yuasa values with normalized ``lot_no`` and ``date`` keys.
+        """
         keys = [
             "yuasa_lot_no",
             "ay8000r_weight",
@@ -432,7 +589,15 @@ class COAApp:
         return values
 
     def ask_output_directory(self, company: str, title: str) -> str:
-        """Ask for and persist a company's report output directory."""
+        """Ask for and persist a company's report output directory.
+
+        Args:
+            company: Company identifier used to load and save its directory.
+            title: Title displayed by the directory chooser.
+
+        Returns:
+            The selected directory, or an empty string after cancellation.
+        """
         output_dir = self.file_dialog.askdirectory(
             initialdir=export_paths[company],
             title=title,
@@ -451,7 +616,21 @@ class COAApp:
         qty_products: set[str] | None = None,
         include_gel_time: bool = True,
     ):
-        """Validate, generate, and announce a type-1 report export."""
+        """Validate, generate, and announce a type-1 report export.
+
+        Args:
+            company: Company identifier used for form and product data.
+            template: Word template used to generate the report.
+            qty_products: Products requiring a user-entered quantity.
+            include_gel_time: Whether the report includes gel time.
+
+        Returns:
+            None.
+
+        Raises:
+            UserInputError: If entered report values are invalid.
+            RuntimeError: If report generation fails.
+        """
         context = build_type_1_context(
             company,
             self.get_type_1_values(company, qty_products, include_gel_time),
@@ -469,7 +648,18 @@ class COAApp:
         )
 
     def export_yuasa_report(self, template: str):
-        """Validate, generate, and announce a Yuasa report export."""
+        """Validate, generate, and announce a Yuasa report export.
+
+        Args:
+            template: Word template used to generate the report.
+
+        Returns:
+            None.
+
+        Raises:
+            UserInputError: If entered report values are invalid.
+            RuntimeError: If report generation fails.
+        """
         context = build_yuasa_context(self.get_yuasa_values())
         output_dir = self.ask_output_directory("yuasa", "選擇報告輸出資料夾")
         if not output_dir:
@@ -481,7 +671,19 @@ class COAApp:
         )
 
     def generate_report(self, template: str, context: dict, output_dir: str) -> str:
-        """Generate a report and normalize generator failures for the GUI."""
+        """Generate a report and normalize generator failures for the GUI.
+
+        Args:
+            template: Word template used to generate the report.
+            context: Validated template rendering context.
+            output_dir: Directory where the report should be saved.
+
+        Returns:
+            The saved report filename returned by the generator.
+
+        Raises:
+            RuntimeError: If the configured report generator fails.
+        """
         try:
             return self.report_generator(
                 template_file=template,
@@ -492,18 +694,44 @@ class COAApp:
             raise RuntimeError(f"匯出失敗：\n{exc}") from exc
 
     def show_message(self, title: str, message: str):
-        """Display an informational dialog."""
+        """Display an informational dialog.
+
+        Args:
+            title: Dialog title.
+            message: Informational text displayed to the user.
+
+        Returns:
+            None.
+        """
         self.dialog.showinfo(title, message)
 
     def show_error(self, message: str):
-        """Display an error dialog."""
+        """Display an error dialog.
+
+        Args:
+            message: Error text displayed to the user.
+
+        Returns:
+            None.
+        """
         self.dialog.showerror("錯誤", message)
 
     def safe_callback(self, callback):
-        """Wrap a GUI callback with user-facing exception handling."""
+        """Wrap a GUI callback with user-facing exception handling.
+
+        Args:
+            callback: Zero-argument callable invoked by a Tkinter widget.
+
+        Returns:
+            A zero-argument callback that reports exceptions through dialogs.
+        """
 
         def wrapped():
-            """Run the callback and convert known failures into dialogs."""
+            """Run the callback and convert known failures into dialogs.
+
+            Returns:
+                The wrapped callback's value on success, otherwise ``None``.
+            """
             try:
                 return callback()
             except UserInputError as exc:
@@ -518,13 +746,26 @@ class COAApp:
         return wrapped
 
     def report_callback_exception(self, exc_type, exc_value, exc_traceback):
-        """Handle exceptions raised directly by Tkinter callbacks."""
+        """Handle exceptions raised directly by Tkinter callbacks.
+
+        Args:
+            exc_type: Class of the uncaught exception.
+            exc_value: Uncaught exception instance.
+            exc_traceback: Traceback associated with the exception.
+
+        Returns:
+            None.
+        """
         if DEBUG:
             traceback.print_exception(exc_type, exc_value, exc_traceback)
         self.show_error(f"發生未預期錯誤：\n{exc_value}")
 
     def on_close(self):
-        """Persist settings before closing the root window."""
+        """Persist settings before closing the root window.
+
+        Returns:
+            None. The window remains open if settings cannot be saved.
+        """
         try:
             save_all_paths(export_paths)
         except Exception as exc:
@@ -534,7 +775,11 @@ class COAApp:
 
 
 def run():
-    """Start the Tkinter desktop application."""
+    """Start the Tkinter desktop application.
+
+    Returns:
+        None. The function blocks until the Tkinter event loop exits.
+    """
     load_export_paths()
     root = Tk()
     COAApp(root)

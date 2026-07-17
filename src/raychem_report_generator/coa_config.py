@@ -11,12 +11,29 @@ DEFAULT_EXPORT_PATH = os.path.expanduser("~")
 
 
 def split_csv(value: str) -> list[str]:
-    """Split a comma-separated configuration value into non-empty items."""
+    """Split a comma-separated configuration value into non-empty items.
+
+    Args:
+        value: Raw comma-separated configuration text.
+
+    Returns:
+        Stripped, non-empty configuration items.
+    """
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
 def load_app_config(path: str = APP_CONFIG_FILE) -> configparser.ConfigParser:
-    """Load the application INI file while preserving option name casing."""
+    """Load the application INI file while preserving option name casing.
+
+    Args:
+        path: Path to the INI configuration file.
+
+    Returns:
+        The populated configuration parser.
+
+    Raises:
+        FileNotFoundError: If the configuration file cannot be read.
+    """
     parser = configparser.ConfigParser()
     parser.optionxform = str
     if not parser.read(path, encoding="utf-8"):
@@ -50,7 +67,11 @@ export_paths = {company: DEFAULT_EXPORT_PATH for company in COMPANIES}
 
 
 def create_export_config_file():
-    """Create the per-user export-path configuration with default values."""
+    """Create the per-user export-path configuration with default values.
+
+    Returns:
+        None. The function writes the initial JSON configuration to disk.
+    """
     if DEBUG:
         print(
             f"Creating export config file at {CONFIG_FILE} "
@@ -62,7 +83,14 @@ def create_export_config_file():
 
 
 def load_last_path(company: str):
-    """Return the last valid export directory saved for a company."""
+    """Return the last valid export directory saved for a company.
+
+    Args:
+        company: Company identifier used in the saved configuration key.
+
+    Returns:
+        The saved directory, or the default export directory when unavailable.
+    """
     if not os.path.exists(CONFIG_FILE):
         create_export_config_file()
 
@@ -78,7 +106,14 @@ def load_last_path(company: str):
 
 
 def save_all_paths(paths: dict):
-    """Persist all valid company export directories to user configuration."""
+    """Persist all valid company export directories to user configuration.
+
+    Args:
+        paths: Mapping of company identifiers to candidate export directories.
+
+    Returns:
+        None. Valid directories are merged into the JSON configuration.
+    """
     if not os.path.exists(CONFIG_FILE):
         create_export_config_file()
 
@@ -103,13 +138,24 @@ def save_all_paths(paths: dict):
 
 
 def load_product_specs(path: str = PRODUCT_SPECS_FILE) -> dict:
-    """Load product specifications from a JSON file."""
+    """Load product specifications from a JSON file.
+
+    Args:
+        path: Path to the product specification JSON file.
+
+    Returns:
+        Nested product specification data keyed by company and product.
+    """
     with open(path, "r", encoding="utf-8") as specs_file:
         return json.load(specs_file)
 
 
 def load_export_paths():
-    """Load and cache the last export directory for every company."""
+    """Load and cache the last export directory for every company.
+
+    Returns:
+        The shared mapping of company identifiers to export directories.
+    """
     for company in COMPANIES:
         export_paths[company] = load_last_path(company)
     return export_paths

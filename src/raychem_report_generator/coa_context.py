@@ -19,12 +19,27 @@ from .coa_utils import (
 
 
 def type_1_uses_user_quantity(product_name: str, qty_products: set[str] | None) -> bool:
-    """Return whether a type-1 product requires a user-entered quantity."""
+    """Return whether a type-1 product requires a user-entered quantity.
+
+    Args:
+        product_name: Selected product name.
+        qty_products: Products configured to accept an entered quantity.
+
+    Returns:
+        ``True`` when the selected product uses an entered quantity.
+    """
     return qty_products is not None and product_name in qty_products
 
 
 def format_hy2537_base_weight(weight: str) -> str:
-    """Remove the barrel multiplier from an HY2537 weight description."""
+    """Remove the barrel multiplier from an HY2537 weight description.
+
+    Args:
+        weight: Configured HY2537 weight description.
+
+    Returns:
+        The base weight without a barrel multiplier.
+    """
     return re.sub(r"\*\s*\d+\s*桶", "", weight, count=1)
 
 
@@ -35,7 +50,21 @@ def build_type_1_context(
     qty_products: set[str] | None = None,
     include_gel_time: bool = True,
 ) -> dict:
-    """Validate type-1 inputs and build a template rendering context."""
+    """Validate type-1 inputs and build a template rendering context.
+
+    Args:
+        company: Company identifier used to select product specifications.
+        values: Raw values collected from the company form.
+        product_specs: Product specifications keyed by company and product.
+        qty_products: Products that require user-entered quantities.
+        include_gel_time: Whether gel time is required and rendered.
+
+    Returns:
+        A validated and display-formatted template context.
+
+    Raises:
+        UserInputError: If required input or product configuration is invalid.
+    """
     product_name = require_text(values.get("product_name"), "品名")
     if company not in product_specs:
         raise UserInputError(f"找不到 {company} 的產品規格。")
@@ -88,7 +117,17 @@ def build_type_1_context(
 
 
 def build_yuasa_context(values: dict) -> dict:
-    """Validate Yuasa inputs and build a template rendering context."""
+    """Validate Yuasa inputs and build a template rendering context.
+
+    Args:
+        values: Raw values collected from the Yuasa form.
+
+    Returns:
+        A validated context with calculated quantities and expiration date.
+
+    Raises:
+        UserInputError: If input is invalid or weights are not valid multiples.
+    """
     test_date = validate_report_date(values.get("date"))
     lot_no = require_text(values.get("lot_no"), "批號")
     if not re.fullmatch(r"[A-Za-z]\d{6}.*", lot_no):

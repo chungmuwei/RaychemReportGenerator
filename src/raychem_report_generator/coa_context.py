@@ -48,6 +48,7 @@ def build_type_1_context(
     values: dict,
     product_specs: dict,
     qty_products: set[str] | None = None,
+    include_total_weight: bool = False,
     include_gel_time: bool = True,
 ) -> dict:
     """Validate type-1 inputs and build a template rendering context.
@@ -57,6 +58,7 @@ def build_type_1_context(
         values: Raw values collected from the company form.
         product_specs: Product specifications keyed by company and product.
         qty_products: Products that require user-entered quantities.
+        include_total_weight: Whether to include the total weight.
         include_gel_time: Whether gel time is required and rendered.
 
     Returns:
@@ -82,36 +84,44 @@ def build_type_1_context(
         if uses_user_quantity
         else None
     )
+    total_weight = (
+        parse_positive_int(values.get("total_weight"), "總重量 Kg")
+        if include_total_weight
+        else None
+    )
     gel_time = (
         parse_positive_int(values.get("gel_time"), "凝膠時間 sec")
         if include_gel_time
         else None
     )
-    spec = product_specs[company][product_name]
+    spec: dict = product_specs[company][product_name]
 
     context = {
         "product_name": product_name,
         "date": test_date,
         "lot_no": lot_no,
-        "weight": format_numeric_text(spec["weight"]),
-        "unit_weight": format_numeric_text(spec.get("unit_weight", "")),
-        "qty": format_numeric_text(spec.get("qty", "")),
+        "weight": format_numeric_text(spec.get("weight", "")),
         "viscosity_range": format_numeric_text(spec["viscosity_range"]),
         "appearance": spec["appearance"],
         "obs_appearance": spec["appearance"],
         "couple": COUPLE[product_name],
-        "hardness": format_numeric_text(spec["hardness"]),
-        "gel_time_range": format_numeric_text(spec["gel_time_range"]),
+        "hardness": format_numeric_text(spec.get("hardness", "")),
+        "gel_time_range": format_numeric_text(spec.get("gel_time_range", "")),
         "viscosity": format_type_1_viscosity(viscosity),
     }
+    if include_total_weight:
+        context["weight"] = format_numeric_text(total_weight)
+        context["unit_weight"] = format_numeric_text(spec["unit_weight"])
+        if total_weight % spec["unit_weight"] != 0:
+            raise UserInputError(
+                f"總重量必須是 {spec['unit_weight']} Kg 的倍數。"
+            )
+        qty = total_weight // spec["unit_weight"]
+        context["qty"] = format_numeric_text(qty)
     if include_gel_time:
         context["gel_time"] = format_numeric_text(gel_time)
     if uses_user_quantity:
         context["qty"] = format_numeric_text(qty)
-    # Only UIC products currently define unit weight and quantity separately.
-    if company == "uic":
-        total_weight = int(context["unit_weight"]) * int(context["qty"])
-        context["weight"] = format_numeric_text(total_weight)
 
     return context
 

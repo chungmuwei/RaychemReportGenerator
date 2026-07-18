@@ -33,22 +33,14 @@ PRODUCT_SPECS = {
     },
     "uic": {
         "CY8101R": {
-            "weight": "360",
-            "unit_weight": "20",
-            "quantity": "18",
+            "unit_weight": 20,
             "viscosity_range": "10,000~20,000",
             "appearance": "Red liquid",
-            "hardness": "",
-            "gel_time_range": "",
         },
         "HY8101": {
-            "weight": "75",
-            "unit_weight": "15",
-            "quantity": "5",
+            "unit_weight": 15,
             "viscosity_range": "15~50",
             "appearance": "Transparent liquid",
-            "hardness": "",
-            "gel_time_range": "",
         },
     },
 }
@@ -229,11 +221,11 @@ class AppValidationTests(unittest.TestCase):
                 "product_name": "CY8101R",
                 "date": "2026/06/14",
                 "lot_no": "T260528",
-                "quantity": "24",
+                "total_weight": "480",
                 "viscosity": "12158",
             },
             PRODUCT_SPECS,
-            app.UIC_QTY_PRODUCTS,
+            include_total_weight=True,
             include_gel_time=False,
         )
 
@@ -247,27 +239,26 @@ class AppValidationTests(unittest.TestCase):
         self.assertEqual(context["viscosity"], "12,158")
         self.assertNotIn("gel_time", context)
 
-    def test_build_uic_context_uses_entered_qty_when_enabled(self):
-        """Use the entered UIC quantity when configured.
+    def test_build_uic_context_rejects_weight_not_divisible_by_unit_weight(self):
+        """Reject a UIC total weight that cannot form whole packages.
 
         Returns:
             None.
         """
-        context = app.build_type_1_context(
-            "uic",
-            {
-                "product_name": "CY8101R",
-                "date": "2026/06/14",
-                "lot_no": "T260528",
-                "viscosity": "12158",
-                "quantity": "21",
-            },
-            PRODUCT_SPECS,
-            app.UIC_QTY_PRODUCTS,
-            include_gel_time=False,
-        )
-
-        self.assertEqual(context["qty"], "21")
+        with self.assertRaisesRegex(app.UserInputError, "20 Kg 的倍數"):
+            app.build_type_1_context(
+                "uic",
+                {
+                    "product_name": "CY8101R",
+                    "date": "2026/06/14",
+                    "lot_no": "T260528",
+                    "viscosity": "12158",
+                    "total_weight": "74",
+                },
+                PRODUCT_SPECS,
+                include_total_weight=True,
+                include_gel_time=False,
+            )
 
     def test_build_etacom_hy2537_context_uses_entered_qty(self):
         """Use the entered quantity for Etacom HY2537.
@@ -325,11 +316,11 @@ class AppValidationTests(unittest.TestCase):
                 "product_name": "HY8101",
                 "date": "2026/06/14",
                 "lot_no": "T260528",
-                "quantity": "9",
+                "total_weight": "135",
                 "viscosity": "30",
             },
             PRODUCT_SPECS,
-            qty_products=app.UIC_QTY_PRODUCTS,
+            include_total_weight=True,
             include_gel_time=False,
         )
 
@@ -496,7 +487,8 @@ class AppCallbackTests(unittest.TestCase):
             app_obj.product_specs = PRODUCT_SPECS
             app_obj.ask_output_directory = lambda company, title: tmpdir
             app_obj.get_type_1_values = (
-                lambda company, qty_products=None, include_gel_time=True: {
+                lambda company, qty_products=None, include_total_weight=False,
+                include_gel_time=True: {
                 "product_name": "樹脂CY2536L",
                 "date": "2026/06/14",
                 "lot_no": "T260614",
@@ -538,7 +530,8 @@ class AppCallbackTests(unittest.TestCase):
         app_obj = self.make_uninitialized_app()
         app_obj.product_specs = PRODUCT_SPECS
         app_obj.get_type_1_values = (
-            lambda company, qty_products=None, include_gel_time=True: {
+            lambda company, qty_products=None, include_total_weight=False,
+            include_gel_time=True: {
             "product_name": "樹脂CY2536L",
             "date": "2026/06/14",
             "lot_no": "",
@@ -574,12 +567,13 @@ class AppCallbackTests(unittest.TestCase):
             app_obj.product_specs = PRODUCT_SPECS
             app_obj.ask_output_directory = lambda company, title: tmpdir
             app_obj.get_type_1_values = (
-                lambda company, qty_products=None, include_gel_time=True: {
+                lambda company, qty_products=None, include_total_weight=False,
+                include_gel_time=True: {
                 "product_name": "HY8101",
                 "date": "2026/06/14",
                 "lot_no": "T260528",
                 "viscosity": "30",
-                "quantity": "9",
+                "total_weight": "135",
                 }
             )
 
@@ -603,7 +597,7 @@ class AppCallbackTests(unittest.TestCase):
                 app_obj,
                 "uic",
                 "template.docx",
-                app.UIC_QTY_PRODUCTS,
+                include_total_weight=True,
                 include_gel_time=False,
             )
 

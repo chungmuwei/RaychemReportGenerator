@@ -48,22 +48,14 @@
     },
     "uic": {
         "CY8101R": {
-            "weight": "360",
-            "unit_weight": "20",
-            "qty": "18",
+            "unit_weight": 20,
             "viscosity_range": "10,000~20,000",
-            "appearance": "Red liquid",
-            "hardness": "",
-            "gel_time_range": ""
+            "appearance": "Red liquid"
         },
         "HY8101": {
-            "weight": "75",
-            "unit_weight": "15",
-            "qty": "5",
+            "unit_weight": 15,
             "viscosity_range": "15~50",
-            "appearance": "Transparent liquid",
-            "hardness": "",
-            "gel_time_range": ""
+            "appearance": "Transparent liquid"
         }
     }
 }

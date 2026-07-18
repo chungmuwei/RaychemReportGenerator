@@ -54,7 +54,6 @@ BUSWAY_PRODUCT_NAME = split_csv(APP_CONFIG["products"]["busway"])
 UIC_PRODUCT_NAME = split_csv(APP_CONFIG["products"]["uic"])
 
 ETACOM_QTY_PRODUCTS = set(split_csv(APP_CONFIG["quantity_products"].get("etacom", "")))
-UIC_QTY_PRODUCTS = set(split_csv(APP_CONFIG["quantity_products"].get("uic", "")))
 
 COUPLE = dict(APP_CONFIG.items("couples"))
 

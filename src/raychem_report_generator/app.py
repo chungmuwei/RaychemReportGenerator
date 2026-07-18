@@ -16,7 +16,6 @@ from .coa_config import (
     ETACOM_QTY_PRODUCTS,
     ETACOM_TEMPLATE_FILE,
     UIC_PRODUCT_NAME,
-    UIC_QTY_PRODUCTS,
     UIC_TEMPLATE_FILE,
     YUASA_TEMPLATE_FILE,
     export_paths,
@@ -105,7 +104,10 @@ class ScrollableFrame(ttk.Frame):
 
 
 class COAApp:
-    """Desktop interface for validating inputs and exporting COA reports."""
+    """
+    Desktop Tkinter GUI app for making COA reports of Raychem Material
+    Technology Ltd. products.
+    """
 
     def __init__(
         self,
@@ -216,7 +218,7 @@ class COAApp:
             default_product="CY8101R",
             visible_products=2,
             template=UIC_TEMPLATE_FILE,
-            qty_products=UIC_QTY_PRODUCTS,
+            include_total_weight=True,
             include_gel_time=False,
         )
 
@@ -320,6 +322,7 @@ class COAApp:
         visible_products: int,
         template: str,
         qty_products: set[str] | None = None,
+        include_total_weight: bool = False,
         include_gel_time: bool = True,
     ):
         """Build the shared form used by type-1 company reports.
@@ -331,7 +334,8 @@ class COAApp:
             default_product: Product selected when the form is created.
             visible_products: Number of visible list-box rows.
             template: Word template used for report generation.
-            qty_products: Products requiring an entered quantity.
+            qty_products: A set of products requiring an additional quantity field.
+            include_total_weight: Whether to include the total weight field.
             include_gel_time: Whether to include the gel-time field.
 
         Returns:
@@ -346,8 +350,10 @@ class COAApp:
             default_product,
             visible_products,
         )
+
         self.add_entry(parent, 1, "批號", f"{company}_lot_no", "T")
         next_row = 2
+
         if qty_products:
             self.add_entry(parent, next_row, "數量", f"{company}_quantity")
             listbox.bind(
@@ -358,8 +364,14 @@ class COAApp:
             )
             self.update_type_1_quantity_state(company, qty_products)
             next_row += 1
+
+        if include_total_weight:
+            self.add_entry(parent, next_row, "總重量 Kg", f"{company}_total_weight")
+            next_row += 1
+
         self.add_entry(parent, next_row, "黏度 cPs", f"{company}_viscosity")
         next_row += 1
+
         if include_gel_time:
             self.add_entry(parent, next_row, "凝膠時間 sec", f"{company}_gel_time")
             next_row += 1
@@ -378,6 +390,7 @@ class COAApp:
                     company,
                     template,
                     qty_products,
+                    include_total_weight,
                     include_gel_time,
                 )
             ),
@@ -537,13 +550,15 @@ class COAApp:
         self,
         company: str,
         qty_products: set[str] | None = None,
+        include_total_weight: bool = False,
         include_gel_time: bool = True,
     ) -> dict:
-        """Collect the current type-1 form values for context building.
+        """Collect the current type 1 product form values for context building.
 
         Args:
             company: Company identifier used to locate form values.
-            qty_products: Products that require an entered quantity.
+            qty_products: Products that include a quantity input.
+            include_total_weight: Whether to collect the total weight value.
             include_gel_time: Whether to collect the gel-time value.
 
         Returns:
@@ -558,6 +573,8 @@ class COAApp:
         }
         if type_1_uses_user_quantity(product_name, qty_products):
             values["quantity"] = self.vars[f"{company}_quantity"].get()
+        if include_total_weight:
+            values["total_weight"] = self.vars[f"{company}_total_weight"].get()
         if include_gel_time:
             values["gel_time"] = self.vars[f"{company}_gel_time"].get()
         return values
@@ -614,6 +631,7 @@ class COAApp:
         company: str,
         template: str,
         qty_products: set[str] | None = None,
+        include_total_weight: bool = False,
         include_gel_time: bool = True,
     ):
         """Validate, generate, and announce a type-1 report export.
@@ -622,6 +640,7 @@ class COAApp:
             company: Company identifier used for form and product data.
             template: Word template used to generate the report.
             qty_products: Products requiring a user-entered quantity.
+            include_total_weight: Whether to include the total weight.
             include_gel_time: Whether the report includes gel time.
 
         Returns:
@@ -631,11 +650,13 @@ class COAApp:
             UserInputError: If entered report values are invalid.
             RuntimeError: If report generation fails.
         """
+        type_1_values = self.get_type_1_values(company, qty_products, include_total_weight, include_gel_time)
         context = build_type_1_context(
             company,
-            self.get_type_1_values(company, qty_products, include_gel_time),
+            type_1_values,
             self.product_specs,
             qty_products,
+            include_total_weight,
             include_gel_time,
         )
         output_dir = self.ask_output_directory(company, "選擇報告輸出資料夾")

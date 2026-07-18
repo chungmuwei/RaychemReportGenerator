@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from types import SimpleNamespace
 
 from raychem_report_generator import app
 
@@ -392,17 +393,36 @@ class AppValidationTests(unittest.TestCase):
                 }
             )
 
-    def test_mousewheel_scroll_units_handles_trackpad_and_wheel_deltas(self):
-        """Normalize mouse-wheel and trackpad deltas.
+    def test_touchpad_scroll_uses_tk_precise_pixel_scrolling(self):
+        """Unpack the Tk 9 touchpad delta and scroll the canvas by pixels."""
+        calls = []
+        frame = SimpleNamespace(
+            canvas=SimpleNamespace(_w=".canvas"),
+            tk=SimpleNamespace(call=lambda *args: calls.append(args) or (2, -7)),
+        )
 
-        Returns:
-            None.
-        """
-        self.assertEqual(app.mousewheel_scroll_units(120), -1)
-        self.assertEqual(app.mousewheel_scroll_units(-120), 1)
-        self.assertEqual(app.mousewheel_scroll_units(1), -1)
-        self.assertEqual(app.mousewheel_scroll_units(-1), 1)
-        self.assertEqual(app.mousewheel_scroll_units(0), 0)
+        result = app.ScrollableFrame.on_touchpad_scroll(
+            frame, SimpleNamespace(delta=196601)
+        )
+
+        self.assertEqual(calls[0], ("tk::PreciseScrollDeltas", 196601))
+        self.assertEqual(calls[1], ("tk::ScrollByPixels", ".canvas", 0, -7))
+        self.assertEqual(result, "break")
+
+    def test_mousewheel_uses_tk_9_mousewheel_handler(self):
+        """Delegate physical mouse-wheel movement to Tk 9."""
+        calls = []
+        frame = SimpleNamespace(
+            canvas=SimpleNamespace(_w=".canvas"),
+            tk=SimpleNamespace(call=lambda *args: calls.append(args)),
+        )
+
+        result = app.ScrollableFrame.on_mousewheel(
+            frame, SimpleNamespace(delta=120)
+        )
+
+        self.assertEqual(calls, [("tk::MouseWheel", ".canvas", "y", 120, -40.0)])
+        self.assertEqual(result, "break")
 
     def test_type_1_viscosity_format_avoids_forced_trailing_zeroes(self):
         """Format viscosity without unnecessary trailing zeroes.

@@ -32,7 +32,6 @@ from .coa_utils import (
     UserInputError,
     format_numeric_text,
     format_type_1_viscosity,
-    mousewheel_scroll_units,
 )
 
 
@@ -68,6 +67,8 @@ class ScrollableFrame(ttk.Frame):
 
         self.body.bind("<Configure>", self.update_scroll_region)
         self.canvas.bind("<Configure>", self.update_canvas_width)
+        self.bind_all("<MouseWheel>", self.on_mousewheel)
+        self.bind_all("<TouchpadScroll>", self.on_touchpad_scroll)
 
     def update_scroll_region(self, _event=None):
         """Resize the canvas scroll region to include all child widgets.
@@ -91,16 +92,16 @@ class ScrollableFrame(ttk.Frame):
         """
         self.canvas.itemconfigure(self.canvas_window, width=event.width)
 
-    def scroll_units(self, units: int):
-        """Scroll the content vertically by the requested number of units.
+    def on_touchpad_scroll(self, event):
+        """Handle Tk 9 precise two-finger scrolling."""
+        _, delta_y = self.tk.call("tk::PreciseScrollDeltas", event.delta)
+        self.tk.call("tk::ScrollByPixels", self.canvas._w, 0, delta_y)
+        return "break"
 
-        Args:
-            units: Signed number of vertical units to scroll.
-
-        Returns:
-            None.
-        """
-        self.canvas.yview_scroll(units, "units")
+    def on_mousewheel(self, event):
+        """Handle Tk 9 physical mouse-wheel scrolling."""
+        self.tk.call("tk::MouseWheel", self.canvas._w, "y", event.delta, -40.0)
+        return "break"
 
 
 class COAApp:
@@ -168,6 +169,7 @@ class COAApp:
         style.configure("CompanyTab.TButton", padding=(16, 6))
         style.configure("SelectedCompanyTab.TButton", padding=(16, 6))
         style.configure("TLabel", padding=(0, 2))
+        style.configure("TLabelframe.Label", font="TkDefaultFont")
         style.configure("TFrame", padding=0)
 
     def build_layout(self):
@@ -225,9 +227,6 @@ class COAApp:
         yuasa = self.add_company_tab("yuasa", "湯淺", 3)
         self.build_yuasa_section(yuasa)
         self.switch_company("etacom")
-        self.root.bind_all("<MouseWheel>", self.on_mousewheel)
-        self.root.bind_all("<Button-4>", self.on_scroll_up)
-        self.root.bind_all("<Button-5>", self.on_scroll_down)
 
     def add_company_tab(self, company: str, title: str, column: int) -> ttk.Frame:
         """Add a company selector and return its associated content frame.
@@ -274,44 +273,6 @@ class COAApp:
         self.active_company = company
         self.scroll_frame.canvas.yview_moveto(0)
         self.root.after_idle(self.scroll_frame.update_scroll_region)
-
-    def on_mousewheel(self, event):
-        """Scroll the active form in response to mouse-wheel input.
-
-        Args:
-            event: Tkinter event containing a mouse-wheel delta.
-
-        Returns:
-            ``"break"`` to stop further event propagation.
-        """
-        units = mousewheel_scroll_units(event.delta)
-        if units:
-            self.scroll_frame.scroll_units(units)
-        return "break"
-
-    def on_scroll_up(self, _event):
-        """Scroll the active form upward for Linux button events.
-
-        Args:
-            _event: Tkinter button event; its value is unused.
-
-        Returns:
-            ``"break"`` to stop further event propagation.
-        """
-        self.scroll_frame.scroll_units(-1)
-        return "break"
-
-    def on_scroll_down(self, _event):
-        """Scroll the active form downward for Linux button events.
-
-        Args:
-            _event: Tkinter button event; its value is unused.
-
-        Returns:
-            ``"break"`` to stop further event propagation.
-        """
-        self.scroll_frame.scroll_units(1)
-        return "break"
 
     def build_type_1_section(
         self,

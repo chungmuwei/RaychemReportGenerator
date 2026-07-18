@@ -137,19 +137,3 @@ def format_type_1_viscosity(viscosity: float) -> str:
     """
     formatted = f"{viscosity:.4g}" if viscosity < 1000 else str(round(viscosity))
     return format_numeric_text(formatted)
-
-
-def mousewheel_scroll_units(delta: int) -> int:
-    """Convert a platform-specific mouse-wheel delta to scroll units.
-
-    Args:
-        delta: Raw wheel or trackpad delta reported by Tkinter.
-
-    Returns:
-        Signed vertical scroll units, or zero when no movement occurred.
-    """
-    if delta == 0:
-        return 0
-    if abs(delta) >= 120:
-        return int(-delta / 120)
-    return -1 if delta > 0 else 1

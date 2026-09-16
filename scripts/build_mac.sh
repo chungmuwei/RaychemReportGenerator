@@ -40,6 +40,14 @@ if ! "$VENV_PYTHON" -m PyInstaller --version > /dev/null 2>&1; then
     exit 1
 fi
 
+# 確認 Python 的 _tkinter 實際連結 Tcl/Tk 9，避免把 Tk 8.6 打包進 App。
+if ! "$VENV_PYTHON" -c 'import tkinter; raise SystemExit(tkinter.TkVersion < 9.0)'; then
+    TK_VERSION=$("$VENV_PYTHON" -c 'import tkinter; print(tkinter.TkVersion)')
+    echo "錯誤：$VENV_PYTHON 連結的 Tcl/Tk 版本是 ${TK_VERSION}，需要 9.0 以上版本。"
+    echo "請使用 Homebrew python@3.13 與 python-tk@3.13 重建 .venv。"
+    exit 1
+fi
+
 # 確認 create-dmg 存在
 if ! command -v create-dmg &> /dev/null; then
     echo "錯誤：找不到 create-dmg，請執行：brew install create-dmg"

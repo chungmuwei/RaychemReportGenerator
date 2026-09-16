@@ -41,17 +41,24 @@
 
 ### 前置需求
 
-- Python 3.13（建議使用 pyenv）
+- Homebrew Python 3.13
+- Tcl/Tk 9（由 Homebrew `python-tk@3.13` 提供 Python 綁定）
 - macOS（本機開發）
 
 ### 建立虛擬環境並安裝依賴
 
 ```bash
-python3.13 -m venv .venv
+brew install python@3.13 python-tk@3.13
+"$(brew --prefix python@3.13)/bin/python3.13" -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 python -m pip install -e .
+python -c 'import tkinter; print(tkinter.TkVersion)'
 ```
+
+最後一個指令應輸出 `9.0`。`tkinter` 是 Python 編譯時連結的標準庫，
+不能在 Conda/python.org Python 所建立的現有虛擬環境中以 `pip` 從 Tk 8.6 升級。
+如果 `.venv` 原本使用其他 Python，請刪除後依上述指令重建。
 
 ### 執行程式
 
@@ -73,7 +80,7 @@ make test
 
 | 套件 | 版本 | 用途 |
 |---|---|---|
-| tkinter | Python standard library | GUI 框架與原生檔案對話框 |
+| tkinter / Tcl/Tk | 9.0+ | GUI 框架與原生檔案對話框 |
 | [docxtpl](https://docxtpl.readthedocs.io/) | 0.20.2 | Word 模板渲染（Jinja2 語法） |
 | [python-docx](https://python-docx.readthedocs.io/) | 1.2.0 | Word 文件操作 |
 | [docxcompose](https://github.com/4teamwork/docxcompose) | 2.2.0 | 合併 Word 文件 |

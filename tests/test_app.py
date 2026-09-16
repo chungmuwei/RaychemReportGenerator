@@ -2,6 +2,7 @@ import os
 import tempfile
 import unittest
 from types import SimpleNamespace
+from unittest import mock
 
 from raychem_report_generator import app
 
@@ -125,6 +126,17 @@ class FakeWidget:
 
 
 class AppValidationTests(unittest.TestCase):
+    def test_require_tk_9_accepts_tk_9(self):
+        """Accept a Python interpreter linked against Tcl/Tk 9."""
+        with mock.patch.object(app.tk, "TkVersion", 9.0):
+            app.require_tk_9()
+
+    def test_require_tk_9_rejects_tk_8(self):
+        """Reject an interpreter that would run the app with Tcl/Tk 8."""
+        with mock.patch.object(app.tk, "TkVersion", 8.6):
+            with self.assertRaisesRegex(RuntimeError, "Tcl/Tk 9.0"):
+                app.require_tk_9()
+
     def test_build_type_1_context_formats_and_populates_specs(self):
         """Build a type-1 context with formatted specification values.
 

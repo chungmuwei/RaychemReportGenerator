@@ -756,12 +756,22 @@ class COAApp:
         self.root.destroy()
 
 
+def require_tk_9() -> None:
+    """Reject Python interpreters whose Tkinter binding predates Tcl/Tk 9."""
+    if tk.TkVersion < 9.0:
+        raise RuntimeError(
+            "本程式需要 Tcl/Tk 9.0 以上版本；"
+            f"目前 Python 連結的版本是 {tk.TkVersion:.1f}。"
+        )
+
+
 def run():
     """Start the Tkinter desktop application.
 
     Returns:
         None. The function blocks until the Tkinter event loop exits.
     """
+    require_tk_9()
     load_export_paths()
     root = Tk()
     COAApp(root)

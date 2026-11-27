@@ -1,11 +1,40 @@
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
+
+from docx import Document
+from docx.oxml.ns import qn
 
 from raychem_report_generator import generator
+from raychem_report_generator.coa_config import (
+    BUSWAY_TEMPLATE_FILE,
+    ETACOM_TEMPLATE_FILE,
+    UIC_TEMPLATE_FILE,
+)
 
 
 class GeneratorTests(unittest.TestCase):
+    def test_generated_product_name_uses_east_asian_and_latin_fonts(self):
+        context = {"product_name": "樹脂CY2536L", "lot_no": "T261128"}
+
+        for template in (ETACOM_TEMPLATE_FILE, BUSWAY_TEMPLATE_FILE, UIC_TEMPLATE_FILE):
+            with self.subTest(template=template), tempfile.TemporaryDirectory() as tmpdir:
+                with patch("builtins.print"):
+                    path = generator.generate_coa_report(template, context, tmpdir)
+
+                self.assertEqual(os.path.basename(path), "COA_CY2536L_T261128.docx")
+                document = Document(path)
+                product_fonts = [
+                    run.xpath("./w:rPr/w:rFonts")[0]
+                    for run in document.element.xpath(".//w:r")
+                    if run.text == context["product_name"]
+                ]
+                self.assertEqual(len(product_fonts), 1)
+                self.assertEqual(product_fonts[0].get(qn("w:eastAsia")), "DFKai-SB")
+                self.assertEqual(product_fonts[0].get(qn("w:ascii")), "Arial")
+                self.assertEqual(product_fonts[0].get(qn("w:hAnsi")), "Arial")
+
     def test_sequence_filename_returns_docx_when_file_does_not_exist(self):
         """Return the base DOCX path when no report exists.
 
